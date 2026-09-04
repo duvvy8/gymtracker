@@ -1,76 +1,111 @@
-/* Base element styling. Everything here resolves to a token in tokens.css. */
+/*
+ * Base element styling. Everything here resolves to a token in tokens.css.
+ *
+ * These rules live in @layer base on purpose. Tailwind emits utilities into
+ * the `utilities` layer, and unlayered CSS beats any layered rule regardless
+ * of specificity. Element selectors written outside a layer would therefore
+ * silently override utility classes on the same element, which is exactly
+ * how `dialog { max-width }` came to defeat `max-w-lg`.
+ */
 
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
 
-body {
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: var(--text-base--line-height);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* No overflow-x: hidden. Horizontal overflow is fixed at the source,
-     not concealed, so the responsive checks stay meaningful. */
-}
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* No overflow-x: hidden. Horizontal overflow is fixed at the source,
+       not concealed, so the responsive checks stay meaningful. */
+  }
 
-/* One consistent, high contrast focus indicator on every interactive
-   element. Never removed, never replaced by a colour-only change. */
-:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
+  /* One consistent, high contrast focus indicator on every interactive
+     element. Never removed, never replaced by a colour-only change. */
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
 
-/* Only suppress the default ring where a custom :focus-visible rule
-   already provides an equivalent indicator. */
-:focus:not(:focus-visible) {
-  outline: none;
-}
+  /* Only suppress the default ring where a custom :focus-visible rule
+     already provides an equivalent indicator. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 
-::selection {
-  background-color: var(--color-accent-weak);
-  color: var(--color-ink);
-}
+  ::selection {
+    background-color: var(--color-accent-weak);
+    color: var(--color-ink);
+  }
 
-/* Headings inherit the sans stack and a tightened tracking. */
-h1,
-h2,
-h3,
-h4 {
-  font-weight: 600;
-  letter-spacing: var(--tracking-tight);
-  text-wrap: balance;
-}
+  /* Headings inherit the sans stack and a tightened tracking. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    text-wrap: balance;
+  }
 
-/* Long words (food names pasted from labels) must never widen the layout. */
-p,
-li,
-dd,
-dt,
-td,
-th,
-label,
-button,
-a {
-  overflow-wrap: break-word;
-}
+  /* Long words (food names pasted from labels) must never widen the layout. */
+  p,
+  li,
+  dd,
+  dt,
+  td,
+  th,
+  label,
+  button,
+  a {
+    overflow-wrap: break-word;
+  }
 
-svg {
-  display: block;
-}
+  svg {
+    display: block;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  /* Native modal dialog.
+     display is set on dialog[open] rather than through a utility class so the
+     browser's own closed state (display: none) is never overridden. The flex
+     column lets the body scroll while the header and footer stay put, which
+     is what keeps the dialog usable in a short window. */
+  dialog {
+    margin: auto;
+    /* width leaves a gutter on a narrow screen. Capping the size is left to
+       a max-w-* utility on the element, which is a different property and so
+       composes with this rather than fighting it. */
+    width: calc(100% - 2rem);
+    max-height: calc(100dvh - 2rem);
+    padding: 0;
+    overflow: hidden;
+  }
+
+  dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  dialog::backdrop {
+    background-color: rgb(22 21 15 / 0.45);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -92,12 +127,12 @@ svg {
   color: var(--color-ink-3);
 }
 
-/* Guards a flex or grid child against being widened by its content. */
-@utility min-w-0-safe {
-  min-width: 0;
-}
-
 /* Bottom padding that clears the fixed tab bar plus the device safe area. */
 @utility pb-tab-bar {
   padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+}
+
+/* Sits a fixed element just above the tab bar instead of on top of it. */
+@utility above-tab-bar {
+  bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px) + 0.75rem);
 }

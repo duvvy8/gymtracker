@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NoticeBar } from './NoticeBar';
 import { IconHistory, IconLog, IconPrivacy, IconSettings, IconToday } from './icons';
 
 type NavItem = {
@@ -98,6 +99,8 @@ export function AppShell() {
           </NavLink>
         ))}
       </nav>
+
+      <NoticeBar />
     </div>
   );
 }

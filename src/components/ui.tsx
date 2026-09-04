@@ -6,35 +6,13 @@ import {
   type ReactNode,
   type SelectHTMLAttributes,
 } from 'react';
+import { Link } from 'react-router-dom';
 import { IconAlert } from './icons';
+import { buttonClasses, type ButtonSize, type ButtonVariant } from '../lib/buttonStyles';
 
 /* -------------------------------------------------------------------------
  * Buttons
- *
- * Rectangles with a 5px radius. Never pills. Hover changes background and
- * border colour only, never opacity.
  * ---------------------------------------------------------------------- */
-
-type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger';
-type ButtonSize = 'md' | 'sm' | 'icon';
-
-const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 rounded-md border font-medium ' +
-  'transition-colors disabled:cursor-not-allowed disabled:border-line ' +
-  'disabled:bg-sunken disabled:text-ink-3';
-
-const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'border-accent bg-accent text-white hover:border-accent-hover hover:bg-accent-hover',
-  secondary: 'border-line-input bg-surface text-ink hover:bg-sunken',
-  quiet: 'border-transparent bg-transparent text-ink-2 hover:bg-sunken hover:text-ink',
-  danger: 'border-danger bg-danger text-white hover:border-ink hover:bg-ink',
-};
-
-const BUTTON_SIZES: Record<ButtonSize, string> = {
-  md: 'h-11 px-4 text-sm',
-  sm: 'h-9 px-3 text-sm',
-  icon: 'h-11 w-11 shrink-0',
-};
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -46,14 +24,30 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   return (
-    <button
-      ref={ref}
-      type={type}
-      className={`${BUTTON_BASE} ${BUTTON_VARIANTS[variant]} ${BUTTON_SIZES[size]} ${className}`}
-      {...rest}
-    />
+    <button ref={ref} type={type} className={buttonClasses(variant, size, className)} {...rest} />
   );
 });
+
+/** A router link that reads as a button. Kept a real anchor for the a11y tree. */
+export function LinkButton({
+  to,
+  variant = 'secondary',
+  size = 'md',
+  className = '',
+  children,
+}: {
+  to: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link to={to} className={buttonClasses(variant, size, className)}>
+      {children}
+    </Link>
+  );
+}
 
 /* -------------------------------------------------------------------------
  * Surfaces
