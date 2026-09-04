@@ -1,0 +1,103 @@
+/* Base element styling. Everything here resolves to a token in tokens.css. */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* No overflow-x: hidden. Horizontal overflow is fixed at the source,
+     not concealed, so the responsive checks stay meaningful. */
+}
+
+/* One consistent, high contrast focus indicator on every interactive
+   element. Never removed, never replaced by a colour-only change. */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Only suppress the default ring where a custom :focus-visible rule
+   already provides an equivalent indicator. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+::selection {
+  background-color: var(--color-accent-weak);
+  color: var(--color-ink);
+}
+
+/* Headings inherit the sans stack and a tightened tracking. */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+
+/* Long words (food names pasted from labels) must never widen the layout. */
+p,
+li,
+dd,
+dt,
+td,
+th,
+label,
+button,
+a {
+  overflow-wrap: break-word;
+}
+
+svg {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Every figure the user reads is set in the mono face with fixed-width
+   digits, so values do not shift horizontally as they change. */
+@utility numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'zero' 1;
+}
+
+/* Small caps-style section labels. Used sparingly. */
+@utility eyebrow {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+/* Guards a flex or grid child against being widened by its content. */
+@utility min-w-0-safe {
+  min-width: 0;
+}
+
+/* Bottom padding that clears the fixed tab bar plus the device safe area. */
+@utility pb-tab-bar {
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+}

@@ -1,0 +1,121 @@
+/*
+ * gymtracker design system
+ * ------------------------
+ * Every colour, type step, radius and shadow used in the application is
+ * declared here. Components reference these tokens through Tailwind
+ * utilities only. Nothing is defined ad hoc at the call site.
+ *
+ * Contrast: every foreground/background pair below is checked by
+ * `npm run check:contrast` against WCAG 2.1 AA (4.5:1 for text,
+ * 3:1 for interactive boundaries).
+ */
+
+@theme {
+  /* ---- Reset Tailwind's stock palette so only project colours exist ---- */
+  --color-*: initial;
+
+  /* Surfaces. A warm paper ground rather than a blue-grey one, so the
+     ink and the data colours read as printed rather than as screen chrome. */
+  --color-paper: #f5f2ec;
+  --color-surface: #ffffff;
+  --color-sunken: #ebe7de;
+  --color-line: #dcd6c9;
+  --color-line-strong: #c6bfae;
+
+  /* Interactive boundaries need 3:1 against both paper and surface. */
+  --color-line-input: #8a8474;
+
+  /* Ink */
+  --color-ink: #16150f;
+  --color-ink-2: #4a4639;
+  --color-ink-3: #6b6555;
+  --color-white: #ffffff;
+
+  /* Accent. A deep pine, chosen because it sits beside the food data
+     colours without competing with them and stays legible at small sizes. */
+  --color-accent: #1f5e4e;
+  --color-accent-hover: #17493d;
+  --color-accent-weak: #e3ede9;
+
+  /* Data colours. Distinct in hue and in lightness so the charts remain
+     readable in greyscale and to colour-blind readers. */
+  --color-energy: #2b2a22;
+  --color-protein: #1f5e4e;
+  --color-carb: #9a5b00;
+  --color-fat: #9b3b32;
+  --color-weight: #35566e;
+
+  /* Status */
+  --color-danger: #a32b22;
+  --color-danger-weak: #f7e7e5;
+  --color-focus: #0b4f9e;
+
+  /* ---- Typography ----
+     IBM Plex Sans for interface text, IBM Plex Mono for every number the
+     user reads or compares. Rationale is in the README. */
+  --font-sans:
+    'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono:
+    'IBM Plex Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Consolas, monospace;
+
+  /* Type scale, roughly a 1.24 ratio, expressed in px so the steps are
+     unambiguous. Body is 15px, deliberately not a framework default. */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-2xs--line-height: 1rem; /* 16px */
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--line-height: 1rem; /* 16px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-sm--line-height: 1.25rem; /* 20px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-base--line-height: 1.5rem; /* 24px */
+  --text-lg: 1.0625rem; /* 17px */
+  --text-lg--line-height: 1.625rem; /* 26px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-xl--line-height: 1.75rem; /* 28px */
+  --text-2xl: 1.5625rem; /* 25px */
+  --text-2xl--line-height: 2rem; /* 32px */
+  --text-3xl: 1.9375rem; /* 31px */
+  --text-3xl--line-height: 2.375rem; /* 38px */
+  --text-4xl: 2.4375rem; /* 39px */
+  --text-4xl--line-height: 2.75rem; /* 44px */
+
+  --tracking-tight: -0.012em;
+  --tracking-wide: 0.02em;
+  --tracking-caps: 0.07em;
+
+  /* ---- Spacing ----
+     4px base. The permitted steps are 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20
+     and 24, i.e. 4px through 96px. `npm run check:tokens` fails the build
+     if an arbitrary length ever appears in a class name. */
+  --spacing: 0.25rem;
+
+  /* ---- Shape ----
+     Small radii throughout. Controls are rectangles with softened corners,
+     never pills. */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+
+  /* ---- Elevation ----
+     One hairline plus one soft drop. No glass, no coloured borders. */
+  --shadow-card: 0 1px 0 rgb(22 21 15 / 0.04), 0 1px 3px rgb(22 21 15 / 0.07);
+  --shadow-raised: 0 1px 0 rgb(22 21 15 / 0.05), 0 4px 14px rgb(22 21 15 / 0.11);
+
+  /* ---- Breakpoints ---- */
+  --breakpoint-*: initial;
+  --breakpoint-xs: 24rem; /* 384px */
+  --breakpoint-sm: 40rem; /* 640px */
+  --breakpoint-md: 48rem; /* 768px */
+  --breakpoint-lg: 64rem; /* 1024px */
+  --breakpoint-xl: 80rem; /* 1280px */
+
+  /* ---- Layout constants ---- */
+  --container-measure: 46rem;
+  --container-wide: 72rem;
+}
+
+/* Layout constant shared between the tab bar and the padding utility
+   that keeps content clear of it. */
+:root {
+  --tab-bar-height: 3.75rem; /* 60px, matches h-15 on the tab bar */
+}

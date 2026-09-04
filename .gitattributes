@@ -1,0 +1,8 @@
+# Keep line endings identical on Windows, macOS and the Linux CI runner so
+# `prettier --check` (endOfLine: lf) behaves the same everywhere.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary
