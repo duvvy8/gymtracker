@@ -64,6 +64,13 @@ export function energyFromMacros(macros: Macros): number {
 const integerFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 const oneDecimalFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
 
+/* Weight keeps a trailing decimal so a column of readings stays aligned in
+   the tabular figures, rather than 83 sitting beside 82.5. */
+const weightFormat = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 export function formatCalories(value: number): string {
   if (!Number.isFinite(value)) return '0';
   return integerFormat.format(Math.round(value));
@@ -102,5 +109,5 @@ export function displayToKg(value: number, unit: WeightUnit): number {
 }
 
 export function formatWeight(kg: number, unit: WeightUnit): string {
-  return `${oneDecimalFormat.format(kgToDisplay(kg, unit))} ${unit}`;
+  return `${weightFormat.format(kgToDisplay(kg, unit))} ${unit}`;
 }
