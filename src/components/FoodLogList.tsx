@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { deleteFoodLog } from '../db/queries';
-import { formatAmount, formatCalories, formatGrams } from '../lib/nutrition';
+import { formatAmount, formatCalories } from '../lib/nutrition';
+import { MacroSummary } from './MacroSummary';
 import { IconEdit, IconTrash } from './icons';
 import { Button, EmptyState } from './ui';
 import type { FoodLog } from '../types';
@@ -54,10 +55,12 @@ export function FoodLogList({
                   {log.brand ? `${log.brand} · ` : ''}
                   {formatAmount(log.amount, log.unit, log.servingLabel)}
                 </p>
-                <p className="numeric mt-1 text-xs text-ink-2">
-                  P {formatGrams(log.protein)} · C {formatGrams(log.carbs)} · F{' '}
-                  {formatGrams(log.fat)} g
-                </p>
+                <MacroSummary
+                  protein={log.protein}
+                  carbs={log.carbs}
+                  fat={log.fat}
+                  className="mt-1"
+                />
               </div>
 
               <div className="flex shrink-0 flex-col items-end gap-1">
