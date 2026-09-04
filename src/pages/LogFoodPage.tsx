@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { findFoodByBarcode, searchFoods } from '../db/queries';
 import { lookupBarcode } from '../lib/openFoodFacts';
 import { useAppStore } from '../lib/store';
 import { EMPTY_FOOD_FORM, foodToFormValues, type FoodFormValues } from '../lib/foodFormValues';
-import { BarcodeScanner } from '../components/BarcodeScanner';
 import { DateStepper } from '../components/DateStepper';
 import { FoodForm } from '../components/FoodForm';
 import { FoodResultList } from '../components/FoodResultList';
@@ -12,6 +11,16 @@ import { LogEntryDialog } from '../components/LogEntryDialog';
 import { IconBarcode, IconClose, IconPlus, IconSearch } from '../components/icons';
 import { Button, Card, CardHeader, PageHeader, TextInput } from '../components/ui';
 import type { Food, FoodSource } from '../types';
+
+/**
+ * The scanner carries the ZXing decoder, which is large and is needed only
+ * when someone actually scans something. It is loaded on demand and mounted
+ * only while open, so the decoder never enters the initial download and the
+ * camera cleanup on unmount stays the single release path.
+ */
+const BarcodeScanner = lazy(() =>
+  import('../components/BarcodeScanner').then((module) => ({ default: module.BarcodeScanner })),
+);
 
 type Editor = {
   values: FoodFormValues;
@@ -202,13 +211,17 @@ export function LogFoodPage() {
         ) : null}
       </div>
 
-      <BarcodeScanner
-        open={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onBarcode={(barcode) => void handleBarcode(barcode)}
-        busy={lookupBusy}
-        {...(lookupError ? { lookupError } : {})}
-      />
+      {scannerOpen ? (
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            open
+            onClose={() => setScannerOpen(false)}
+            onBarcode={(barcode) => void handleBarcode(barcode)}
+            busy={lookupBusy}
+            {...(lookupError ? { lookupError } : {})}
+          />
+        </Suspense>
+      ) : null}
 
       <LogEntryDialog
         open={logging !== null}

@@ -200,6 +200,21 @@ Product images are deliberately not loaded. That keeps the content security poli
 A lookup prefills the food form for review rather than writing straight to the database, because
 Open Food Facts records are community edited and often incomplete.
 
+### Bundle
+
+Everything is bundled locally, so the download size is a real design constraint rather than
+someone else's problem. The two heaviest dependencies are loaded only when they are actually
+needed:
+
+| Chunk           | Raw    | Gzipped | Loaded                         |
+| --------------- | ------ | ------- | ------------------------------ |
+| Initial         | 428 kB | 132 kB  | Always                         |
+| History         | 381 kB | 108 kB  | On opening History (Recharts)  |
+| Barcode scanner | 482 kB | 124 kB  | On opening the scanner (ZXing) |
+
+Splitting those two out took the initial download from 365 kB gzipped to 132 kB. Someone who never
+opens History and never scans a barcode never downloads either library.
+
 ## Security
 
 The full policy is in the source and enforced by tooling, not by review discipline. The load
