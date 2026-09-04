@@ -57,8 +57,39 @@ for (const file of walk(SRC)) {
   }
 }
 
+/**
+ * chartTheme.ts is the one file allowed to name colours, because Recharts
+ * takes them as props. Its fallbacks must still agree with tokens.css, so
+ * they are compared here rather than trusted.
+ */
+const tokensCss = readFileSync(join(SRC, 'styles', 'tokens.css'), 'utf8');
+const declared = new Map();
+for (const match of tokensCss.matchAll(/--(color-[a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)) {
+  declared.set(match[1], match[2].toLowerCase());
+}
+
+const chartTheme = readFileSync(join(SRC, 'lib', 'chartTheme.ts'), 'utf8');
+let compared = 0;
+for (const match of chartTheme.matchAll(/'(color-[a-z0-9-]+)':\s*'(#[0-9a-fA-F]{6})'/g)) {
+  const [, name, fallback] = match;
+  compared += 1;
+  const expected = declared.get(name);
+  if (expected === undefined) {
+    console.error(`src/lib/chartTheme.ts  --${name} is not declared in tokens.css.`);
+    failures += 1;
+  } else if (expected !== fallback.toLowerCase()) {
+    console.error(
+      `src/lib/chartTheme.ts  --${name} fallback ${fallback} does not match tokens.css ${expected}.`,
+    );
+    failures += 1;
+  }
+}
+
 if (failures > 0) {
   console.error(`\n${failures} design system violation(s).`);
   process.exit(1);
 }
-console.log('Design system check passed: no arbitrary lengths, no colour literals.');
+console.log(
+  'Design system check passed: no arbitrary lengths, no colour literals, ' +
+    `${compared} chart fallbacks match tokens.css.`,
+);

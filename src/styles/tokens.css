@@ -10,7 +10,11 @@
  * 3:1 for interactive boundaries).
  */
 
-@theme {
+/* `static` makes Tailwind emit every token as a CSS custom property, not
+   just the ones a generated utility happens to reference. Recharts takes
+   colours as props rather than class names, so src/lib/chartTheme.ts reads
+   these variables at runtime and there would otherwise be nothing to read. */
+@theme static {
   /* ---- Reset Tailwind's stock palette so only project colours exist ---- */
   --color-*: initial;
 

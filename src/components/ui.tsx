@@ -62,8 +62,12 @@ export function Card({
   className?: string;
   as?: 'section' | 'div' | 'article';
 }) {
+  // min-w-0 is load bearing. A card is usually a grid or flex item, and those
+  // default to min-width: auto, which refuses to shrink below the content's
+  // intrinsic width. A chart inside would then hold the card open at its last
+  // measured size and push a horizontal scrollbar onto the page.
   return (
-    <Tag className={`rounded-lg border border-line bg-surface shadow-card ${className}`}>
+    <Tag className={`min-w-0 rounded-lg border border-line bg-surface shadow-card ${className}`}>
       {children}
     </Tag>
   );
