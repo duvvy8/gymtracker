@@ -74,17 +74,26 @@ function securityAssets(): Plugin {
         .map(([name, value]) => `  ${name}: ${value}`)
         .join('\n');
 
+      // Cloudflare Workers Static Assets reads _headers and applies it to
+      // every asset response. Because this app ships no Worker script, that
+      // covers everything the site serves.
       this.emitFile({
         type: 'asset',
         fileName: '_headers',
         source: `/*\n${headerLines}\n`,
       });
 
-      this.emitFile({
-        type: 'asset',
-        fileName: '_redirects',
-        source: '/*  /index.html  200\n',
-      });
+      // No _redirects file is emitted. The usual SPA rule, `/* /index.html
+      // 200`, is rejected outright by Workers Static Assets:
+      //
+      //   Invalid _redirects configuration
+      //   Line 1: Infinite loop detected in this rule. [code: 100324]
+      //
+      // Workers already strips `/index` and `.html` before matching, so the
+      // rule feeds itself. Client-side routing is handled instead by
+      // `assets.not_found_handling: "single-page-application"` in
+      // wrangler.jsonc. A Netlify or Pages deploy would need its own
+      // equivalent rule added back.
     },
   };
 }
