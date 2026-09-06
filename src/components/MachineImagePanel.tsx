@@ -24,7 +24,7 @@ export function MachineImagePanel({
               src={machine.imagePath}
               alt={machine.alt}
               width="640"
-              height="480"
+              height="640"
               loading="lazy"
               decoding="async"
               className={`h-auto w-full object-contain ${detail ? 'max-h-96' : 'max-h-56'}`}
@@ -58,8 +58,8 @@ export function MachineImagePanel({
             <img
               src={machine.imagePath}
               alt={machine.alt}
-              width="1200"
-              height="900"
+              width="640"
+              height="640"
               className="max-h-(--container-image-max-height) w-full object-contain"
             />
           </div>
