@@ -4,10 +4,13 @@ import { BrowserRouter } from 'react-router-dom';
 
 // Fonts are installed as packages and bundled by Vite. Nothing is fetched
 // from a font CDN at runtime.
+//
+// Only the weights the interface actually uses are imported: 400, 500 and
+// 600. The design system has no font-bold anywhere, so shipping the 700
+// weight would be a 23 kB download for a style nothing renders.
 import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-500.css';
 import '@fontsource/ibm-plex-sans/latin-600.css';
-import '@fontsource/ibm-plex-sans/latin-700.css';
 import '@fontsource/ibm-plex-mono/latin-400.css';
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-mono/latin-600.css';

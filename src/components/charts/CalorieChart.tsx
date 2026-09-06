@@ -19,7 +19,12 @@ export function CalorieChart({ series, target }: { series: DailyPoint[]; target:
   return (
     <ChartCanvas ariaLabel={label}>
       {({ width, height }) => (
+        // Recharts puts role="application" and tabIndex 0 on the <svg> so the
+        // data points can be walked with the arrow keys. That makes it a tab
+        // stop, and a tab stop needs a name of its own: the figcaption names
+        // the surrounding <figure>, not the chart inside it.
         <BarChart
+          aria-label={label}
           width={width}
           height={height}
           data={series}

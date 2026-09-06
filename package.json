@@ -19,9 +19,12 @@
     "format:check": "prettier --check .",
     "check:tokens": "node scripts/check-design-tokens.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
+    "check:http": "node scripts/check-http.mjs",
+    "check:barcode": "node scripts/check-barcode.mjs",
     "check:all": "npm run typecheck && npm run lint && npm run check:tokens && npm run check:contrast",
     "icons": "node scripts/generate-icons.mjs",
     "deploy": "npm run build && wrangler deploy",
+    "publish:site": "npm run check:all && npm run deploy",
     "deploy:dry": "npm run build && wrangler deploy --dry-run",
     "whoami": "wrangler whoami"
   },

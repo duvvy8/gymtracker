@@ -23,7 +23,6 @@ export interface Notice {
 
 interface AppState {
   selectedDate: IsoDate;
-  setSelectedDate: (date: IsoDate) => void;
   shiftSelectedDate: (days: number) => void;
   goToToday: () => void;
 
@@ -36,8 +35,6 @@ let noticeCounter = 0;
 
 export const useAppStore = create<AppState>((set) => ({
   selectedDate: todayIso(),
-
-  setSelectedDate: (date) => set({ selectedDate: date }),
 
   shiftSelectedDate: (days) =>
     set((state) => ({ selectedDate: addDays(state.selectedDate, days) })),

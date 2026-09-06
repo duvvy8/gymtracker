@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { getFood, saveFoodLog } from '../db/queries';
 import { LIMITS } from '../lib/limits';
 import { formatCalories, formatGrams, round1, scaleFood } from '../lib/nutrition';
-import { parseNumberInput } from '../lib/validation';
+import { parseNumberInput, isValidationError } from '../lib/validation';
 import { Dialog } from './Dialog';
 import { Button, Callout, Field, NumberInput, Select } from './ui';
 import type { Food, FoodLog, IsoDate, LogUnit, Macros } from '../types';
@@ -70,7 +70,8 @@ export function LogEntryDialog({
   );
   const food = providedFood ?? linkedFood;
 
-  const canWeigh = Boolean(food?.servingGrams && food.servingGrams > 0);
+  const servingGrams = food?.servingGrams;
+  const canWeigh = Boolean(servingGrams && servingGrams > 0);
   const canChangeUnit = Boolean(food) && canWeigh;
 
   const [amountText, setAmountText] = useState('');
@@ -78,7 +79,15 @@ export function LogEntryDialog({
   const [error, setError] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
 
-  // Reset the form whenever the dialog is opened for a different subject.
+  /**
+   * Reset only when the dialog is opened for a different subject.
+   *
+   * The dependencies are deliberately identifiers rather than the food
+   * object. `food` comes from a live query, so its identity changes when the
+   * lookup resolves and again on any unrelated write to the foods table.
+   * Depending on the object meant an open dialog could wipe out what someone
+   * had already typed.
+   */
   useEffect(() => {
     if (!open) return;
     setError(undefined);
@@ -90,14 +99,14 @@ export function LogEntryDialog({
       return;
     }
 
-    if (food?.servingGrams) {
+    if (providedFood?.servingGrams) {
       setUnit('g');
-      setAmountText(String(food.servingGrams));
+      setAmountText(String(providedFood.servingGrams));
     } else {
       setUnit('serving');
       setAmountText('1');
     }
-  }, [open, food, log]);
+  }, [open, log, providedFood]);
 
   const parsed = parseNumberInput(amountText, boundsFor(unit));
   const preview = parsed.ok ? computeTotals(parsed.value, unit, food, log) : null;
@@ -106,7 +115,32 @@ export function LogEntryDialog({
   const subject = food?.name ?? log?.name ?? 'Entry';
   const servingLabel = food?.servingLabel ?? log?.servingLabel ?? '1 serving';
 
-  async function handleSave() {
+  /**
+   * Switching units converts the amount rather than discarding it. Someone
+   * who typed 2.5 servings and wants to see it in grams should not lose the
+   * 2.5, and the conversion is exact whenever the serving weight is known.
+   */
+  function changeUnit(next: LogUnit) {
+    if (next === unit) return;
+    setError(undefined);
+
+    const current = parseNumberInput(amountText, boundsFor(unit));
+    if (current.ok && servingGrams && servingGrams > 0) {
+      const converted = next === 'g' ? current.value * servingGrams : current.value / servingGrams;
+      setAmountText(String(round1(converted)));
+    } else if (next === 'g' && servingGrams) {
+      setAmountText(String(servingGrams));
+    } else {
+      setAmountText('1');
+    }
+
+    setUnit(next);
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (saving) return;
+
     if (!parsed.ok) {
       setError(parsed.error);
       return;
@@ -116,7 +150,7 @@ export function LogEntryDialog({
     if (!totals) {
       setError(
         canWeigh
-          ? 'This amount could not be converted. Try entering servings instead.'
+          ? 'That amount could not be converted. Enter it in servings instead.'
           : 'This food has no known weight per serving, so it can only be logged in servings.',
       );
       return;
@@ -135,14 +169,20 @@ export function LogEntryDialog({
         servingLabel,
         ...totals,
       });
-      onSaved(log ? 'Entry updated.' : `${subject} added to the log.`);
+      onSaved(log ? 'Entry updated.' : `${subject} logged.`);
       onClose();
     } catch (cause) {
-      // Only this application's own message is shown, never a raw error.
-      setError(cause instanceof Error ? cause.message : 'That entry could not be saved.');
+      // A ValidationError carries a sentence db/queries.ts wrote, so it is safe
+      // to show. Anything else is a storage failure whose message is library
+      // text, and gets the plain fallback instead.
+      setError(
+        isValidationError(cause) ? cause.message : 'That entry could not be saved. Try again.',
+      );
       setSaving(false);
     }
   }
+
+  const formId = 'log-entry-form';
 
   return (
     <Dialog
@@ -152,94 +192,94 @@ export function LogEntryDialog({
       description={subject}
       footer={
         <>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleSave} disabled={saving || !parsed.ok}>
-            {log ? 'Save changes' : 'Add entry'}
+          <Button onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="submit" form={formId} variant="primary" disabled={saving || !parsed.ok}>
+            {saving ? 'Saving' : log ? 'Save changes' : 'Add entry'}
           </Button>
         </>
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="Amount"
-          error={!parsed.ok && amountText !== '' ? parsed.error : undefined}
-          hint={unit === 'g' ? `One serving is ${servingLabel}` : `Servings of ${servingLabel}`}
-        >
-          {({ id, describedBy, invalid }) => (
-            <NumberInput
-              id={id}
-              aria-describedby={describedBy}
-              aria-invalid={invalid}
-              value={amountText}
-              onChange={(event) => {
-                setAmountText(event.target.value);
-                setError(undefined);
-              }}
-              data-autofocus
-            />
-          )}
-        </Field>
+      {/* A real form, so Enter in the amount field submits the way it does
+          everywhere else in the app. */}
+      <form id={formId} onSubmit={handleSubmit} noValidate>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Amount"
+            error={!parsed.ok && amountText !== '' ? parsed.error : undefined}
+            hint={unit === 'g' ? `One serving is ${servingLabel}` : `Servings of ${servingLabel}`}
+          >
+            {({ id, describedBy, invalid }) => (
+              <NumberInput
+                id={id}
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                value={amountText}
+                onChange={(event) => {
+                  setAmountText(event.target.value);
+                  setError(undefined);
+                }}
+                data-autofocus
+              />
+            )}
+          </Field>
 
-        <Field label="Measured in">
-          {({ id }) => (
-            <Select
-              id={id}
-              value={unit}
-              disabled={!canChangeUnit}
-              onChange={(event) => {
-                const next = event.target.value as LogUnit;
-                setUnit(next);
-                setError(undefined);
-                if (next === 'g' && food?.servingGrams) setAmountText(String(food.servingGrams));
-                if (next === 'serving') setAmountText('1');
-              }}
-            >
-              <option value="serving">Servings</option>
-              {canWeigh || unit === 'g' ? <option value="g">Grams</option> : null}
-            </Select>
-          )}
-        </Field>
-      </div>
-
-      <div className="mt-4 rounded-md border border-line bg-sunken px-4 py-3">
-        <p className="eyebrow mb-2">This entry</p>
-        {preview ? (
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
-            <div>
-              <dt className="text-xs text-ink-3">Calories</dt>
-              <dd className="numeric text-lg font-semibold text-ink">
-                {formatCalories(preview.calories)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-ink-3">Protein</dt>
-              <dd className="numeric text-lg font-semibold text-protein">
-                {formatGrams(preview.protein)} g
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-ink-3">Carbs</dt>
-              <dd className="numeric text-lg font-semibold text-carb">
-                {formatGrams(preview.carbs)} g
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-ink-3">Fat</dt>
-              <dd className="numeric text-lg font-semibold text-fat">
-                {formatGrams(preview.fat)} g
-              </dd>
-            </div>
-          </dl>
-        ) : (
-          <p className="text-sm text-ink-3">Enter an amount to see the totals.</p>
-        )}
-      </div>
-
-      {error ? (
-        <div className="mt-4">
-          <Callout tone="error">{error}</Callout>
+          <Field label="Measured in">
+            {({ id }) => (
+              <Select
+                id={id}
+                value={unit}
+                disabled={!canChangeUnit}
+                onChange={(event) => changeUnit(event.target.value as LogUnit)}
+              >
+                <option value="serving">Servings</option>
+                {canWeigh || unit === 'g' ? <option value="g">Grams</option> : null}
+              </Select>
+            )}
+          </Field>
         </div>
-      ) : null}
+
+        <div className="mt-4 rounded-md border border-line bg-sunken px-4 py-3">
+          <p className="eyebrow mb-2">This entry</p>
+          {preview ? (
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+              <div>
+                <dt className="text-xs text-ink-3">Calories</dt>
+                <dd className="numeric text-lg font-semibold text-ink">
+                  {formatCalories(preview.calories)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-ink-3">Protein</dt>
+                <dd className="numeric text-lg font-semibold text-protein">
+                  {formatGrams(preview.protein)} g
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-ink-3">Carbs</dt>
+                <dd className="numeric text-lg font-semibold text-carb">
+                  {formatGrams(preview.carbs)} g
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-ink-3">Fat</dt>
+                <dd className="numeric text-lg font-semibold text-fat">
+                  {formatGrams(preview.fat)} g
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="text-sm text-ink-3">Enter an amount to see the totals.</p>
+          )}
+        </div>
+
+        {error ? (
+          <div className="mt-4">
+            <Callout tone="error">{error}</Callout>
+          </div>
+        ) : null}
+      </form>
     </Dialog>
   );
 }

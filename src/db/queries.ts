@@ -3,10 +3,12 @@ import { db, DEFAULT_SETTINGS, SETTINGS_KEY } from './schema';
 import { LIMITS } from '../lib/limits';
 import {
   bodyWeightLogSchema,
+  describeIssue,
   foodLogSchema,
   foodSchema,
   sanitizeText,
   settingsSchema,
+  ValidationError,
 } from '../lib/validation';
 import type { BackupFile, BodyWeightLog, Food, FoodLog, IsoDate, Settings } from '../types';
 
@@ -19,8 +21,12 @@ function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown, subject: string):
   const result = schema.safeParse(value);
   if (!result.success) {
     const issue = result.error.issues[0];
-    const where = issue?.path.length ? `${issue.path.join('.')}: ` : '';
-    throw new Error(`${subject} was rejected. ${where}${issue?.message ?? 'Invalid value'}`);
+    // describeIssue keeps zod's dotted paths and internal phrasing out of the
+    // interface. Anything shown here is a sentence, not a schema error.
+    const reason = issue ? describeIssue(issue) : 'One of the values is not valid.';
+    // ValidationError, not Error: the save screens show this message verbatim
+    // and must be able to tell it apart from a raw storage failure.
+    throw new ValidationError(`${subject} was not saved. ${reason}`);
   }
   return result.data;
 }
@@ -174,10 +180,6 @@ export async function deleteFoodLog(id: number): Promise<void> {
   await db.foodLogs.delete(id);
 }
 
-export function getFoodLog(id: number): Promise<FoodLog | undefined> {
-  return db.foodLogs.get(id);
-}
-
 export function countFoodLogs(): Promise<number> {
   return db.foodLogs.count();
 }
@@ -212,10 +214,6 @@ export function listBodyWeightsBetween(
   toDate: IsoDate,
 ): Promise<BodyWeightLog[]> {
   return db.bodyWeightLogs.where('date').between(fromDate, toDate, true, true).sortBy('date');
-}
-
-export async function latestBodyWeight(): Promise<BodyWeightLog | undefined> {
-  return db.bodyWeightLogs.orderBy('date').last();
 }
 
 export async function deleteBodyWeight(id: number): Promise<void> {

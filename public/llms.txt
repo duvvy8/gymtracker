@@ -1,0 +1,20 @@
+# gymtracker
+
+> A calorie and macro tracker that runs entirely in the visitor's browser. Food
+> entries, body weight readings and daily targets are stored in the browser's
+> own IndexedDB database. There is no account, no server-side storage and no
+> analytics. The only request the application ever makes to a third party is a
+> barcode lookup against Open Food Facts, and only when someone scans or types
+> a barcode.
+
+## Pages
+
+- [gymtracker](https://gymtracker.kucera.uk/): what the application is and how it works.
+- [Privacy](https://gymtracker.kucera.uk/privacy): what is stored, where it is stored, and the single thing that leaves the device.
+
+## Notes
+
+- The application screens at /log, /history and /settings render no meaningful
+  content without the visitor's own local database, so they are marked noindex
+  and are not listed here.
+- Source code: https://github.com/duvvy8/gymtracker

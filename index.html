@@ -3,14 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!--
+      Everything between these markers is replaced per route at build time by
+      the prerender plugin in vite.config.ts, so each route ships a real
+      static title, description, canonical, robots rule and social card.
+      Crawlers that never execute JavaScript still see correct metadata.
+    -->
+    <!--ROUTE_META_START-->
     <title>gymtracker</title>
     <meta
       name="description"
-      content="Calorie and macro tracker that keeps every entry in your own browser."
+      content="A calorie and macro tracker that keeps every entry in your own browser."
     />
+    <!--ROUTE_META_END-->
+
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#F5F2EC" />
     <meta name="referrer" content="no-referrer" />
+
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -19,7 +30,26 @@
   <body>
     <div id="root"></div>
     <noscript>
-      gymtracker needs JavaScript to read and write your food log. Nothing is sent to a server.
+      <div
+        style="
+          margin: 0 auto;
+          max-width: 40rem;
+          padding: 2rem 1rem;
+          font-family: system-ui, sans-serif;
+          color: #16150f;
+        "
+      >
+        <h1>gymtracker</h1>
+        <p>
+          gymtracker is a calorie and macro tracker that keeps every entry in your own browser.
+          There is no account and no server: your food log is stored in this browser's own database
+          and nothing about it is sent anywhere.
+        </p>
+        <p>
+          It needs JavaScript to read and write that database, so please enable JavaScript to use
+          it.
+        </p>
+      </div>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -134,14 +134,6 @@ export function IconClose(props: IconProps) {
   );
 }
 
-export function IconCheck(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M3.8 10.4 7.6 14.2 16.2 5.6" />
-    </Icon>
-  );
-}
-
 export function IconAlert(props: IconProps) {
   return (
     <Icon {...props}>
@@ -172,16 +164,6 @@ export function IconUpload(props: IconProps) {
   );
 }
 
-export function IconScale(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <rect x="3" y="3.6" width="14" height="12.8" rx="1.5" />
-      <path d="M6.6 12a3.4 3.4 0 0 1 6.8 0" />
-      <path d="M10 12 8.2 8.8" />
-    </Icon>
-  );
-}
-
 export function IconChevronLeft(props: IconProps) {
   return (
     <Icon {...props}>
@@ -202,6 +184,14 @@ export function IconPlus(props: IconProps) {
   return (
     <Icon {...props}>
       <path d="M10 4v12M4 10h12" />
+    </Icon>
+  );
+}
+
+export function IconMenu(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 5.5h14M3 10h14M3 14.5h14" />
     </Icon>
   );
 }

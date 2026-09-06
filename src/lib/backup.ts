@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { LIMITS } from './limits';
 import {
   bodyWeightLogSchema,
+  describeIssue,
   foodLogSchema,
   foodSchema,
   settingsSchema,
@@ -31,7 +32,7 @@ import type { BackupFile, BodyWeightLog, Food, FoodLog, Settings } from '../type
  */
 
 /** Larger than any believable personal backup, and small enough to parse safely. */
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
+export const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 /** Guards against a hand-built file with absurd nesting. */
 const MAX_DEPTH = 12;
@@ -181,10 +182,13 @@ export function parseBackup(text: string): ParseResult<BackupFile> {
   const result = backupSchema.safeParse(parsed);
   if (!result.success) {
     const issue = result.error.issues[0];
-    const where = issue?.path.length ? ` at ${issue.path.join('.')}` : '';
+    const reason = issue ? describeIssue(issue) : '';
     return {
       ok: false,
-      error: `That file is not a gymtracker backup${where}. Nothing was changed.`,
+      error:
+        'This file could not be imported because it is not a valid gymtracker backup. ' +
+        (reason ? reason + ' ' : '') +
+        'Nothing was changed.',
     };
   }
 

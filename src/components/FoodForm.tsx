@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import { saveFood } from '../db/queries';
 import { LIMITS } from '../lib/limits';
 import { energyFromMacros } from '../lib/nutrition';
-import { parseNumberInput, parseOptionalNumberInput, sanitizeText } from '../lib/validation';
+import {
+  parseNumberInput,
+  parseOptionalNumberInput,
+  sanitizeText,
+  isValidationError,
+} from '../lib/validation';
 import { Button, Callout, Field, NumberInput, TextInput } from './ui';
 import type { FoodSource } from '../types';
 import type { FoodFormValues } from '../lib/foodFormValues';
@@ -24,7 +29,6 @@ export function FoodForm({
   barcode,
   onSaved,
   onCancel,
-  submitLabel,
 }: {
   initialValues: FoodFormValues;
   /** Set when editing an existing food. */
@@ -33,7 +37,6 @@ export function FoodForm({
   barcode?: string;
   onSaved: (foodId: number, message: string) => void;
   onCancel?: () => void;
-  submitLabel?: string;
 }) {
   const [values, setValues] = useState<FoodFormValues>(initialValues);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -90,6 +93,9 @@ export function FoodForm({
       return;
     }
 
+    // Narrowing, not a second guard. The check above works on the errors
+    // object, which tells TypeScript nothing about these discriminated
+    // unions, so each one has to be narrowed before .value is readable.
     if (!calories.ok || !protein.ok || !carbs.ok || !fat.ok || !servingGrams.ok) return;
 
     setSaving(true);
@@ -111,7 +117,7 @@ export function FoodForm({
       });
       onSaved(id, foodId ? `${name} updated.` : `${name} saved to your foods.`);
     } catch (cause) {
-      setFormError(cause instanceof Error ? cause.message : 'That food could not be saved.');
+      setFormError(isValidationError(cause) ? cause.message : 'That food could not be saved.');
     } finally {
       setSaving(false);
     }
@@ -255,7 +261,7 @@ export function FoodForm({
       </fieldset>
 
       {showMismatch ? (
-        <Callout>
+        <Callout announce={false}>
           The macros add up to about {Math.round(macroEnergy)} kcal, which is some way from the{' '}
           {Math.round(numericMacros.calories)} kcal entered. Worth a second look, though labels do
           sometimes disagree.
@@ -267,7 +273,7 @@ export function FoodForm({
       <div className="flex flex-wrap justify-end gap-2">
         {onCancel ? <Button onClick={onCancel}>Cancel</Button> : null}
         <Button type="submit" variant="primary" disabled={saving}>
-          {submitLabel ?? (foodId ? 'Save changes' : 'Save food')}
+          {saving ? 'Saving' : foodId ? 'Save changes' : 'Save food'}
         </Button>
       </div>
     </form>

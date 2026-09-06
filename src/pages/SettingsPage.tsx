@@ -49,10 +49,13 @@ export function SettingsPage() {
             title="Your data"
             description="Everything is stored in this browser and nowhere else"
           />
-          <DataPanel
-            counts={counts ?? { foods: 0, foodLogs: 0, bodyWeights: 0 }}
-            onNotice={(message, tone) => showNotice(message, tone)}
-          />
+          {counts ? (
+            <DataPanel counts={counts} onNotice={(message, tone) => showNotice(message, tone)} />
+          ) : (
+            <p role="status" className="p-4 text-sm text-ink-3">
+              Loading your stored data.
+            </p>
+          )}
         </Card>
       </div>
     </>

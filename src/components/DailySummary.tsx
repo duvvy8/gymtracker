@@ -23,14 +23,17 @@ function MacroCell({
 }) {
   return (
     <div className="min-w-0">
-      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+      <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
         <span className={`text-sm font-semibold ${MACRO_TEXT_CLASS[tone]}`}>{label}</span>
-        <span className="numeric truncate text-sm text-ink-2">
+        <span className="numeric text-sm text-ink-2">
           {formatGrams(value)}
           <span className="text-ink-3"> / {formatGrams(target)} g</span>
         </span>
       </div>
       <ProgressBar value={value} target={target} tone={tone} label={label} unit="grams" />
+      <p className="mt-1 text-xs text-ink-3">
+        {formatGrams(Math.abs(target - value))} g {value > target ? 'over target' : 'left'}
+      </p>
     </div>
   );
 }
@@ -70,7 +73,7 @@ export function DailySummary({ totals, settings }: { totals: Macros; settings: S
           />
         </div>
 
-        <p className={`mt-2 text-sm ${isOver ? 'font-medium text-danger' : 'text-ink-2'}`}>
+        <p className="mt-2 text-sm text-ink-2">
           {isOver
             ? `${formatCalories(Math.abs(remaining))} kcal over target`
             : `${formatCalories(remaining)} kcal left`}

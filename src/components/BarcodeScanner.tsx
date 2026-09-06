@@ -251,6 +251,8 @@ export function BarcodeScanner({
               <div className="flex gap-2">
                 <NumberInput
                   id={id}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   aria-describedby={describedBy}
                   aria-invalid={invalid}
                   value={manual}

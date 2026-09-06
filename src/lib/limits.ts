@@ -10,7 +10,6 @@ export const LIMITS = {
   nameMaxLength: 120,
   brandMaxLength: 80,
   servingLabelMaxLength: 60,
-  notesMaxLength: 500,
 
   /** Barcode symbologies this app accepts: EAN-8, UPC-A, EAN-13. */
   barcodeLengths: [8, 12, 13] as const,

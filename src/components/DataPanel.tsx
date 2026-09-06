@@ -1,6 +1,12 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clearAllData, exportAll, replaceAllData } from '../db/queries';
-import { backupFileName, downloadTextFile, parseBackup, serializeBackup } from '../lib/backup';
+import {
+  backupFileName,
+  downloadTextFile,
+  MAX_FILE_BYTES,
+  parseBackup,
+  serializeBackup,
+} from '../lib/backup';
 import { IconDownload, IconUpload } from './icons';
 import { Button, Callout } from './ui';
 import type { BackupFile } from '../types';
@@ -28,16 +34,28 @@ export function DataPanel({
   const [pending, setPending] = useState<Pending>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
 
-  const isEmpty = counts.foods === 0 && counts.foodLogs === 0 && counts.bodyWeights === 0;
+  // Both confirmations replace the button that opened them, so without this
+  // focus would fall to <body> and the next Tab would restart from the top of
+  // the page. Focus lands on Cancel rather than the destructive button: it is
+  // the safe default if someone confirms by reflex.
+  const cancelClearRef = useRef<HTMLButtonElement>(null);
+  const cancelImportRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (confirmingClear) cancelClearRef.current?.focus();
+  }, [confirmingClear]);
+  useEffect(() => {
+    if (pending) cancelImportRef.current?.focus();
+  }, [pending]);
 
   async function handleExport() {
+    if (busy) return;
     setBusy(true);
     try {
       const backup = await exportAll();
       downloadTextFile(backupFileName(), serializeBackup(backup));
       onNotice('Backup downloaded.');
     } catch {
-      onNotice('The export could not be created.', 'error');
+      onNotice('The backup could not be created. Try downloading it again.', 'error');
     } finally {
       setBusy(false);
     }
@@ -48,9 +66,16 @@ export function DataPanel({
     // Reset immediately so choosing the same file twice still fires a change.
     event.target.value = '';
     if (!file) return;
+    if (busy) return;
 
     setImportError(undefined);
     setPending(null);
+    if (file.size > MAX_FILE_BYTES) {
+      setImportError(
+        'That backup is too large. Choose a JSON backup smaller than 20 MB. Nothing was changed.',
+      );
+      return;
+    }
     setBusy(true);
 
     try {
@@ -69,7 +94,7 @@ export function DataPanel({
   }
 
   async function confirmImport() {
-    if (!pending) return;
+    if (!pending || busy) return;
     setBusy(true);
     try {
       await replaceAllData(pending.backup);
@@ -85,6 +110,7 @@ export function DataPanel({
   }
 
   async function confirmClear() {
+    if (busy) return;
     setBusy(true);
     try {
       await clearAllData();
@@ -107,7 +133,7 @@ export function DataPanel({
           everything this app has stored.
         </p>
         <div className="mt-3">
-          <Button onClick={() => void handleExport()} disabled={busy || isEmpty}>
+          <Button onClick={() => void handleExport()} disabled={busy}>
             <IconDownload />
             Download a backup
           </Button>
@@ -125,11 +151,18 @@ export function DataPanel({
         </p>
 
         <div className="mt-3">
+          {/*
+            The real control is the button below. This input is only the file
+            picker it delegates to, so it is taken out of the tab order rather
+            than left as a clipped, unnamed stop for keyboard users.
+          */}
           <input
             ref={fileInputRef}
             type="file"
             accept="application/json,.json"
             className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
             onChange={(event) => void handleFileChosen(event)}
           />
           <Button onClick={() => fileInputRef.current?.click()} disabled={busy}>
@@ -157,7 +190,7 @@ export function DataPanel({
               weight readings will be deleted.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button onClick={() => setPending(null)} disabled={busy}>
+              <Button ref={cancelImportRef} onClick={() => setPending(null)} disabled={busy}>
                 Cancel
               </Button>
               <Button variant="danger" onClick={() => void confirmImport()} disabled={busy}>
@@ -172,12 +205,12 @@ export function DataPanel({
         <h3 className="text-base font-semibold">Delete everything</h3>
         <p className="mt-1 max-w-(--container-measure) text-sm text-ink-2">
           Removes every food, entry, weight reading and target from this browser. There is no undo
-          and no copy anywhere else.
+          and the app keeps no automatic backup. Exported backup files are not deleted.
         </p>
 
         {!confirmingClear ? (
           <div className="mt-3">
-            <Button onClick={() => setConfirmingClear(true)} disabled={busy || isEmpty}>
+            <Button onClick={() => setConfirmingClear(true)} disabled={busy}>
               Delete everything
             </Button>
           </div>
@@ -191,7 +224,11 @@ export function DataPanel({
               This cannot be undone. Download a backup first if you might want any of it back.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button onClick={() => setConfirmingClear(false)} disabled={busy}>
+              <Button
+                ref={cancelClearRef}
+                onClick={() => setConfirmingClear(false)}
+                disabled={busy}
+              >
                 Cancel
               </Button>
               <Button onClick={() => void handleExport()} disabled={busy}>

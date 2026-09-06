@@ -56,14 +56,13 @@ export async function getJson(
   }
 
   const controller = new AbortController();
-  const timeout = window.setTimeout(
+  const timeout = globalThis.setTimeout(
     () => controller.abort(),
     options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
   );
 
-  let response: Response;
   try {
-    response = await fetch(url, {
+    const response = await fetch(url, {
       method: 'GET',
       signal: controller.signal,
       headers: { Accept: 'application/json', ...options.headers },
@@ -74,55 +73,73 @@ export async function getJson(
       referrerPolicy: 'no-referrer',
       mode: 'cors',
     });
-  } catch (cause) {
-    if (cause instanceof DOMException && cause.name === 'AbortError') {
-      throw new HttpError('timeout', 'The lookup took too long and was stopped.');
+
+    if (response.status === 404) {
+      throw new HttpError('not-found', 'That product is not in the Open Food Facts database.');
     }
-    throw new HttpError('offline', 'Could not reach Open Food Facts. Check your connection.');
+    if (response.status === 429) {
+      throw new HttpError(
+        'rate-limited',
+        'Too many lookups just now. Wait a moment and try again.',
+      );
+    }
+    if (response.status !== 200) {
+      throw new HttpError('server', 'Open Food Facts returned an error. Try again shortly.');
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.toLowerCase().includes('application/json')) {
+      throw new HttpError('malformed', 'The response was not in the expected format.');
+    }
+
+    const declaredLength = Number(response.headers.get('content-length'));
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
+      throw new HttpError('malformed', 'The response was larger than expected and was discarded.');
+    }
+
+    if (!response.body) {
+      throw new HttpError('malformed', 'The response was empty. Try again.');
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let body = '';
+    let bytes = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        bytes += value.byteLength;
+        if (bytes > MAX_RESPONSE_BYTES) {
+          throw new HttpError(
+            'malformed',
+            'The response was larger than expected and was discarded.',
+          );
+        }
+        body += decoder.decode(value, { stream: true });
+      }
+      body += decoder.decode();
+    } finally {
+      reader.releaseLock();
+    }
+
+    try {
+      return JSON.parse(body) as unknown;
+    } catch {
+      throw new HttpError('malformed', 'The response could not be read as JSON.');
+    }
+  } catch (cause) {
+    if (cause instanceof HttpError) throw cause;
+    if (controller.signal.aborted) {
+      throw new HttpError('timeout', 'The lookup took too long and was stopped. Try again.');
+    }
+    throw new HttpError(
+      'offline',
+      'Could not reach Open Food Facts. Check your connection or add the food manually.',
+    );
   } finally {
-    window.clearTimeout(timeout);
+    // Keep the deadline active through body consumption, and release the
+    // connection on status, content-type and size failures as well.
+    globalThis.clearTimeout(timeout);
+    controller.abort();
   }
-
-  if (response.status === 404) {
-    throw new HttpError('not-found', 'That product is not in the Open Food Facts database.');
-  }
-  if (response.status === 429) {
-    throw new HttpError('rate-limited', 'Too many lookups just now. Wait a moment and try again.');
-  }
-  if (!response.ok) {
-    throw new HttpError('server', 'Open Food Facts returned an error. Try again shortly.');
-  }
-
-  const contentType = response.headers.get('content-type') ?? '';
-  if (!contentType.toLowerCase().includes('application/json')) {
-    throw new HttpError('malformed', 'The response was not in the expected format.');
-  }
-
-  const declaredLength = Number(response.headers.get('content-length'));
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
-    throw new HttpError('malformed', 'The response was larger than expected and was discarded.');
-  }
-
-  let body: string;
-  try {
-    body = await response.text();
-  } catch {
-    throw new HttpError('offline', 'The response could not be read. Try again.');
-  }
-
-  if (body.length > MAX_RESPONSE_BYTES) {
-    throw new HttpError('malformed', 'The response was larger than expected and was discarded.');
-  }
-
-  try {
-    return JSON.parse(body) as unknown;
-  } catch {
-    throw new HttpError('malformed', 'The response could not be read as JSON.');
-  }
-}
-
-/** A message safe to show a user for any failure this module produces. */
-export function describeHttpError(error: unknown): string {
-  if (error instanceof HttpError) return error.message;
-  return 'Something went wrong with that lookup. Try again.';
 }

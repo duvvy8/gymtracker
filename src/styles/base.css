@@ -26,6 +26,10 @@
        not concealed, so the responsive checks stay meaningful. */
   }
 
+  html:has(dialog[open]) {
+    overflow-y: hidden;
+  }
+
   /* One consistent, high contrast focus indicator on every interactive
      element. Never removed, never replaced by a colour-only change. */
   :focus-visible {
@@ -91,6 +95,18 @@
   dialog[open] {
     display: flex;
     flex-direction: column;
+  }
+
+  /* The navigation drawer. Same native dialog, anchored to the right edge and
+     full height instead of centred, so it reads as a panel rather than a
+     modal card. width is capped in vw so it never overflows a 320px screen. */
+  dialog.drawer {
+    margin: 0 0 0 auto;
+    width: min(19rem, 85vw);
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   dialog::backdrop {

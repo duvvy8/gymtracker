@@ -1,29 +1,32 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { findRoute, PRIMARY_ROUTES, ROUTES } from '../lib/routeMeta';
+import { useDocumentMeta } from '../lib/useDocumentMeta';
+import { MobileMenu } from './MobileMenu';
 import { NoticeBar } from './NoticeBar';
-import { IconHistory, IconLog, IconPrivacy, IconSettings, IconToday } from './icons';
+import { SiteFooter } from './SiteFooter';
+import { IconHistory, IconLog, IconMenu, IconPrivacy, IconSettings, IconToday } from './icons';
+import { Button } from './ui';
 
-type NavItem = {
-  to: string;
-  label: string;
-  /** Shorter label for the tab bar, where five items share the width. */
-  shortLabel: string;
-  Icon: typeof IconToday;
+const ROUTE_ICONS: Record<string, typeof IconToday> = {
+  '/': IconToday,
+  '/log': IconLog,
+  '/history': IconHistory,
+  '/settings': IconSettings,
+  '/privacy': IconPrivacy,
 };
 
-const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Today', shortLabel: 'Today', Icon: IconToday },
-  { to: '/log', label: 'Log food', shortLabel: 'Log', Icon: IconLog },
-  { to: '/history', label: 'History', shortLabel: 'History', Icon: IconHistory },
-  { to: '/settings', label: 'Settings', shortLabel: 'Settings', Icon: IconSettings },
-  { to: '/privacy', label: 'Privacy', shortLabel: 'Privacy', Icon: IconPrivacy },
-];
-
-function Wordmark({ className }: { className?: string }) {
+/** The brand, and the link home that people expect it to be. */
+function Wordmark({ className = '' }: { className?: string }) {
   return (
-    <span className={className}>
-      <span className="font-semibold tracking-tight text-ink">gym</span>
-      <span className="font-semibold tracking-tight text-accent">tracker</span>
-    </span>
+    <Link
+      to="/"
+      className={`inline-flex items-center rounded-sm font-semibold tracking-tight ${className}`}
+    >
+      <span className="text-ink">gym</span>
+      <span className="text-accent">tracker</span>
+      <span className="sr-only">, go to Today</span>
+    </Link>
   );
 }
 
@@ -46,10 +49,43 @@ function tabLinkClass({ isActive }: { isActive: boolean }) {
 
 export function AppShell() {
   const { pathname } = useLocation();
-  const current = NAV_ITEMS.find((item) => item.to === pathname);
+  const route = findRoute(pathname);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+  const mainRef = useRef<HTMLElement>(null);
+  const previousPath = useRef(pathname);
+  const menuId = useId();
+  const menuButtonId = useId();
+
+  useDocumentMeta(route, pathname);
+
+  // Close the menu whenever the route changes, including on browser back.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  /**
+   * A client-side navigation swaps the page without telling anyone. Focus
+   * moves to the new main region so a keyboard user continues from the top of
+   * the new page rather than from wherever the old page's link was, and the
+   * route name is announced.
+   *
+   * The guard compares the previous path rather than tracking "have I run
+   * before". A boolean ref is defeated by StrictMode, which mounts, cleans up
+   * and mounts again: the first pass flips the flag and the second pass then
+   * steals focus on initial load, putting the skip link behind the user
+   * before they have pressed anything. Comparing paths is idempotent, so a
+   * repeated effect run for the same route does nothing.
+   */
+  useEffect(() => {
+    if (previousPath.current === pathname) return;
+    previousPath.current = pathname;
+    mainRef.current?.focus();
+    setAnnouncement(route.navLabel);
+  }, [pathname, route.navLabel]);
 
   return (
-    <div className="min-h-dvh bg-paper text-ink">
+    <div className="flex min-h-dvh flex-col bg-paper text-ink">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-raised"
@@ -57,48 +93,84 @@ export function AppShell() {
         Skip to content
       </a>
 
-      {/* Wide layout: a fixed rail on the left. */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col border-r border-line bg-surface lg:flex">
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
+
+      {/* Wide layout: the rail is the banner, with the primary nav inside it. */}
+      <header className="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col border-r border-line bg-surface lg:flex">
         <div className="flex h-14 items-center border-b border-line px-4">
           <Wordmark className="text-lg" />
         </div>
-        <nav aria-label="Sections" className="flex flex-col py-3">
-          {NAV_ITEMS.map(({ to, label, Icon }) => (
-            <NavLink key={to} to={to} end={to === '/'} className={railLinkClass}>
-              <Icon />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+        <nav aria-label="Primary" className="flex flex-col py-3">
+          {[...PRIMARY_ROUTES, ROUTES.privacy].map(({ path, navLabel }) => {
+            const Icon = ROUTE_ICONS[path] ?? IconToday;
+            return (
+              <NavLink key={path} to={path} end={path === '/'} className={railLinkClass}>
+                <Icon />
+                <span>{navLabel}</span>
+              </NavLink>
+            );
+          })}
         </nav>
-        <p className="mt-auto border-t border-line px-4 py-4 text-xs text-ink-3">
-          Everything you log is stored in this browser only.
-        </p>
-      </aside>
-
-      {/* Narrow layout: a compact header. */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-line bg-surface px-4 lg:hidden">
-        <Wordmark className="text-base" />
-        <span className="truncate text-sm font-medium text-ink-3">{current?.label ?? ''}</span>
       </header>
 
-      <main id="main" className="min-w-0 lg:pl-56">
-        <div className="mx-auto w-full max-w-(--container-wide) px-4 py-6 pb-tab-bar sm:px-6 lg:px-8 lg:pb-12">
+      {/* Narrow layout: a compact banner with the brand and the menu trigger. */}
+      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-4 lg:hidden">
+        <Wordmark className="text-base" />
+        <Button
+          id={menuButtonId}
+          variant="quiet"
+          size="icon"
+          onClick={(event) => {
+            // The dialog restores focus on close to whatever held it when
+            // showModal() ran. Clicking a button does not focus it in every
+            // browser, so focus it here: without this the drawer can close
+            // with focus on <body>, dumping the user back at the top of the
+            // document instead of on the control they just used.
+            event.currentTarget.focus();
+            setMenuOpen(true);
+          }}
+          aria-expanded={menuOpen}
+          aria-controls={menuId}
+        >
+          <IconMenu />
+          <span className="sr-only">Menu</span>
+        </Button>
+      </header>
+
+      <main
+        id="main"
+        ref={mainRef}
+        tabIndex={-1}
+        className="min-w-0 flex-1 focus:outline-none lg:pl-56"
+      >
+        <div className="mx-auto w-full max-w-(--container-wide) px-4 py-6 sm:px-6 lg:px-8">
           <Outlet />
         </div>
       </main>
 
-      {/* Narrow layout: a fixed tab bar. */}
+      <div className="pb-tab-bar lg:pb-0 lg:pl-56">
+        <SiteFooter />
+      </div>
+
+      {/* Narrow layout: the four destinations used daily, in the thumb zone. */}
       <nav
-        aria-label="Sections"
+        aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-30 flex h-15 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
-        {NAV_ITEMS.map(({ to, shortLabel, Icon }) => (
-          <NavLink key={to} to={to} end={to === '/'} className={tabLinkClass}>
-            <Icon />
-            <span className="max-w-full truncate">{shortLabel}</span>
-          </NavLink>
-        ))}
+        {PRIMARY_ROUTES.map(({ path, tabLabel }) => {
+          const Icon = ROUTE_ICONS[path] ?? IconToday;
+          return (
+            <NavLink key={path} to={path} end={path === '/'} className={tabLinkClass}>
+              <Icon />
+              <span className="max-w-full truncate">{tabLabel}</span>
+            </NavLink>
+          );
+        })}
       </nav>
+
+      <MobileMenu id={menuId} open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <NoticeBar />
     </div>

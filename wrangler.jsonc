@@ -5,7 +5,7 @@
 
   // Static assets only. There is deliberately no `main` Worker script: this
   // application is a client-side SPA with no server component, and adding an
-  // empty Worker would only create a second, unnecessary source of responses.
+  // empty Worker would only create a second source of responses.
   //
   // It also keeps the security headers honest. Cloudflare applies the
   // `_headers` file to static asset responses but NOT to responses generated
@@ -14,14 +14,24 @@
   "assets": {
     "directory": "./dist",
 
-    // Client-side routing: /history and /settings are React Router paths, not
-    // files on disk, so an unmatched request has to fall back to index.html.
-    "not_found_handling": "single-page-application",
+    // The build emits a real HTML file for every known route, each with its
+    // own title, description, canonical and robots rule. A matching file is
+    // served before not_found_handling is consulted, so /log is answered by
+    // /log/index.html rather than by a fallback.
+    //
+    // "drop-trailing-slash" serves /log directly instead of 307-redirecting
+    // to /log/, which keeps the served URL identical to the canonical one.
+    "html_handling": "drop-trailing-slash",
+
+    // Not "single-page-application". That mode answers every unmatched path
+    // with index.html and a 200, which makes genuinely missing pages look
+    // like successful ones to both people and crawlers, and invites soft-404
+    // treatment. Because every real route now has its own file, anything left
+    // over is genuinely not found and gets 404.html with a real 404 status.
+    "not_found_handling": "404-page",
   },
 
   // Cloudflare creates the DNS record for this hostname on first deploy.
-  // It requires the zone to be active in the same account, and it refuses to
-  // attach to a hostname that already has a CNAME record.
   "routes": [
     {
       "pattern": "gymtracker.kucera.uk",

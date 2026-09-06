@@ -83,14 +83,7 @@ export function formatGrams(value: number): string {
 
 export function formatAmount(amount: number, unit: LogUnit, servingLabel: string): string {
   if (unit === 'g') return `${oneDecimalFormat.format(amount)} g`;
-  const count = oneDecimalFormat.format(amount);
-  return amount === 1 ? `1 x ${servingLabel}` : `${count} x ${servingLabel}`;
-}
-
-/** Progress toward a target, clamped to 0 for display purposes. */
-export function progressPercent(value: number, target: number): number {
-  if (!Number.isFinite(value) || !Number.isFinite(target) || target <= 0) return 0;
-  return Math.max(0, (value / target) * 100);
+  return `${oneDecimalFormat.format(amount)} x ${servingLabel}`;
 }
 
 /* -------------------------------------------------------------------------

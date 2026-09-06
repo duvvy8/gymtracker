@@ -204,3 +204,83 @@ export const settingsSchema = z.object({
   weightUnit: z.enum(['kg', 'lb']),
   updatedAt: finiteNumber.int().nonnegative(),
 });
+
+/* -------------------------------------------------------------------------
+ * Turning a schema failure into something worth reading
+ * ---------------------------------------------------------------------- */
+
+const FIELD_LABELS: Record<string, string> = {
+  amount: 'Amount',
+  barcode: 'Barcode',
+  brand: 'Brand',
+  calorieTarget: 'Calorie target',
+  calories: 'Calories',
+  carbTarget: 'Carb target',
+  carbs: 'Carbs',
+  date: 'Date',
+  fat: 'Fat',
+  fatTarget: 'Fat target',
+  name: 'Name',
+  protein: 'Protein',
+  proteinTarget: 'Protein target',
+  servingGrams: 'Serving weight',
+  servingLabel: 'Serving description',
+  unit: 'Unit',
+  weightKg: 'Weight',
+};
+
+/**
+ * A validation failure whose message was written for a person to read.
+ *
+ * The save paths catch a rejected write and show `cause.message`. That is only
+ * safe when the app wrote the message: a raw Dexie or DOM failure (quota
+ * exceeded, database closed, a constraint error) is also an Error, and its
+ * text is library output that should never reach the interface. Tagging the
+ * intentional ones lets the UI tell the two apart.
+ */
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+/**
+ * True when this error carries a message written for a person.
+ *
+ * Checked by name rather than with instanceof, which breaks across module
+ * realms and after a bundler duplicates a class.
+ */
+export function isValidationError(cause: unknown): cause is Error {
+  return cause instanceof Error && cause.name === 'ValidationError';
+}
+
+/**
+ * A sentence a person can act on, built from a zod issue.
+ *
+ * The raw issue is developer output: it carries a dotted path with array
+ * indices ("foodLogs.3.calories") and phrasing like "Too big: expected number
+ * to be <=20000". None of that belongs in front of a user, so the field is
+ * mapped to its visible label and the reason to plain language.
+ */
+export function describeIssue(issue: { code?: string; path?: PropertyKey[]; message?: string }) {
+  const key = [...(issue.path ?? [])].reverse().find((part) => typeof part === 'string');
+  const label = (typeof key === 'string' && FIELD_LABELS[key]) || 'One of the values';
+
+  switch (issue.code) {
+    case 'too_big':
+      return `${label} is larger than this app accepts.`;
+    case 'too_small':
+      return `${label} is smaller than this app accepts.`;
+    case 'invalid_type':
+      return `${label} is not a number this app can use.`;
+    case 'invalid_value':
+    case 'invalid_format':
+      return `${label} is not in a format this app recognises.`;
+    default:
+      // Custom refinements already carry a human message, so use it as-is.
+      return issue.message && !/expected|received/i.test(issue.message)
+        ? `${label}: ${issue.message}`
+        : `${label} is not valid.`;
+  }
+}

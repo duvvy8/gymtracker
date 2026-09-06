@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { deleteBodyWeight, listBodyWeights, saveBodyWeight } from '../db/queries';
-import { formatFullDate, todayIso } from '../lib/date';
+import { formatFullDate, formatShortDate, todayIso } from '../lib/date';
 import { LIMITS } from '../lib/limits';
 import { displayToKg, formatWeight, kgToDisplay } from '../lib/nutrition';
-import { isoDateSchema, parseNumberInput } from '../lib/validation';
+import { isoDateSchema, parseNumberInput, isValidationError } from '../lib/validation';
 import { IconTrash } from './icons';
 import { Button, Callout, EmptyState, Field, NumberInput, TextInput } from './ui';
 import type { WeightUnit } from '../types';
@@ -29,6 +29,31 @@ export function BodyWeightPanel({
   const [dateError, setDateError] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
+  const [removeError, setRemoveError] = useState<string | undefined>(undefined);
+
+  // Opening the confirmation replaces the button that was pressed, so focus is
+  // moved to the safe choice rather than being allowed to fall to <body>.
+  const keepRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (confirmingId !== null) keepRef.current?.focus();
+  }, [confirmingId]);
+
+  /** Awaited, so a failed delete is never reported as a success. */
+  async function handleRemove(id: number, label: string) {
+    if (removingId !== null) return;
+    setRemovingId(id);
+    setRemoveError(undefined);
+    try {
+      await deleteBodyWeight(id);
+      setConfirmingId(null);
+      onSaved(`Weight reading for ${label} removed.`);
+    } catch {
+      setRemoveError('That reading could not be removed. Try again.');
+    } finally {
+      setRemovingId(null);
+    }
+  }
 
   const readings = useLiveQuery(() => listBodyWeights(), []);
   const recent = (readings ?? []).slice(-8).reverse();
@@ -68,7 +93,7 @@ export function BodyWeightPanel({
       setWeight('');
       onSaved(`Weight recorded for ${formatFullDate(parsedDate.data)}.`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'That weight could not be saved.');
+      setError(isValidationError(cause) ? cause.message : 'That weight could not be saved.');
     } finally {
       setSaving(false);
     }
@@ -136,26 +161,32 @@ export function BodyWeightPanel({
             {recent.map((entry) => (
               <li key={entry.id} className="flex flex-wrap items-center gap-3 py-2">
                 <span className="numeric min-w-0 flex-1 truncate text-sm text-ink-2">
-                  {formatFullDate(entry.date)}
+                  {formatShortDate(entry.date)}
                 </span>
                 <span className="numeric text-sm font-semibold text-weight">
                   {formatWeight(entry.weightKg, unit)}
                 </span>
                 {confirmingId === entry.id ? (
                   <span className="flex gap-2">
-                    <Button size="sm" onClick={() => setConfirmingId(null)}>
+                    <Button
+                      ref={keepRef}
+                      size="sm"
+                      onClick={() => setConfirmingId(null)}
+                      disabled={removingId === entry.id}
+                    >
                       Keep
                     </Button>
                     <Button
                       size="sm"
                       variant="danger"
+                      disabled={removingId === entry.id}
                       onClick={() => {
-                        if (entry.id !== undefined) void deleteBodyWeight(entry.id);
-                        setConfirmingId(null);
-                        onSaved('Reading removed.');
+                        if (entry.id !== undefined) {
+                          void handleRemove(entry.id, formatFullDate(entry.date));
+                        }
                       }}
                     >
-                      Remove
+                      {removingId === entry.id ? 'Removing' : 'Remove'}
                     </Button>
                   </span>
                 ) : (
@@ -172,10 +203,15 @@ export function BodyWeightPanel({
             ))}
           </ul>
         )}
+        {removeError ? (
+          <div className="mt-3">
+            <Callout tone="error">{removeError}</Callout>
+          </div>
+        ) : null}
       </div>
 
       {readings && readings.length > recent.length ? (
-        <Callout>
+        <Callout announce={false}>
           Showing the {recent.length} most recent of {readings.length} readings. The full record is
           on the History page and in an export.
         </Callout>

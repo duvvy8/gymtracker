@@ -30,7 +30,7 @@ export function PrivacyPage() {
     <>
       <PageHeader
         title="Privacy"
-        description="What this app stores, where it stores it, and the one thing that leaves your device."
+        description="Where your food log lives, how barcode lookups work, and how to keep a backup."
       />
 
       <div className="grid gap-5">
@@ -42,18 +42,22 @@ export function PrivacyPage() {
               Foods you save, every entry in your food log, your body weight readings, and your
               daily calorie and macro targets. That is the complete list. There is nothing else.
             </p>
-            <p className="numeric">
-              Right now this browser holds {counts?.foods ?? 0} foods, {counts?.foodLogs ?? 0} log
-              entries and {counts?.bodyWeights ?? 0} weight readings.
-            </p>
+            {counts ? (
+              <p className="numeric">
+                Right now this browser holds {counts.foods} foods, {counts.foodLogs} log entries and{' '}
+                {counts.bodyWeights} weight readings.
+              </p>
+            ) : (
+              <p className="text-ink-3">Counting what is stored in this browser.</p>
+            )}
           </Section>
 
           <Section title="Where it is stored">
             <p>
               In an IndexedDB database called <span className="numeric">{DATABASE_NAME}</span>,
-              inside this browser profile on this device. There is no account, no server, and no
-              copy anywhere else. If you open this app in a different browser, or on a different
-              computer, it will be empty.
+              inside this browser profile on this device. There is no account or server-side storage
+              of your personal log. Unless you export a backup, this is your only copy. If you open
+              this app in a different browser, or on a different computer, it will be empty.
             </p>
           </Section>
 
@@ -70,23 +74,32 @@ export function PrivacyPage() {
         <Card>
           <CardHeader
             title="What leaves your device"
-            description="One thing, and only when you ask for it"
+            description="Website delivery and optional product lookups"
           />
+
+          <Section title="Loading the website">
+            <p>
+              Cloudflare serves the app and its bundled files over HTTPS. Like any website host, it
+              receives your IP address and ordinary request information when you load the site. Your
+              saved foods, food log, weight readings, and targets are not sent with those requests.
+            </p>
+          </Section>
 
           <Section title="Barcode lookups">
             <p>
-              When you scan a barcode or type one in, that barcode number is sent to Open Food Facts
-              so the product can be looked up. Their servers see the barcode number and, as with any
-              web request, your IP address.
+              When you scan a barcode or type one in, the app checks your saved foods first. If it
+              finds no match, it sends the barcode number to Open Food Facts to look up the product.
+              Their servers see the barcode number and, as with any web request, your IP address.
             </p>
             <p>
               Nothing else is included. Not your food log, not your weight, not your targets, not an
               identifier for you or this device. The request carries no cookies. If you never scan a
-              barcode, this app never contacts anything.
+              barcode or look one up manually, the app does not contact Open Food Facts.
             </p>
             <p>
-              The app can only reach that one address. Any request to anywhere else is refused
-              before it is made.
+              Product lookup requests are restricted to Open Food Facts. The app does not send
+              personal logs to an external service. Links you choose to open, such as the policy
+              below, take you to a separate website.
             </p>
             {/* A standalone call to action rather than a link inside a
                 sentence, so it gets a real target size instead of relying on
@@ -135,10 +148,10 @@ export function PrivacyPage() {
 
           <Section title="Clearing browser data deletes everything">
             <p>
-              Because there is no server, there is no backup. Clearing site data, running a browser
-              cleanup tool, or using private browsing will delete your entire history with no way to
-              recover it. Some browsers also evict storage automatically when a device runs low on
-              space.
+              There is no automatic backup. Clearing site data or running a browser cleanup tool can
+              delete your history. Private browsing usually removes its data when the private
+              session ends. Without an exported backup, deleted data cannot be restored. Some
+              browsers also evict storage automatically when a device runs low on space.
             </p>
             <p>
               Export a backup from Settings from time to time and keep the file somewhere you trust.

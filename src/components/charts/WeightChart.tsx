@@ -16,13 +16,15 @@ export function WeightChart({ series, unit }: { series: WeightPoint[]; unit: Wei
   const lowest = Math.min(...values);
   const highest = Math.max(...values);
   const padding = Math.max((highest - lowest) * 0.2, 0.5);
+  const label = `Body weight in ${unit} across ${series.length} readings, from ${lowest} to ${highest}.`;
 
   return (
-    <ChartCanvas
-      ariaLabel={`Body weight in ${unit} across ${series.length} readings, from ${lowest} to ${highest}.`}
-    >
+    <ChartCanvas ariaLabel={label}>
       {({ width, height }) => (
+        // Named for the same reason as the calorie chart: Recharts makes the
+        // <svg> a tab stop with role="application".
         <LineChart
+          aria-label={label}
           width={width}
           height={height}
           data={series}

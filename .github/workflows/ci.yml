@@ -43,5 +43,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: HTTP boundary regression checks
+        run: npm run check:http
+
+      - name: Barcode regression checks
+        run: npm run check:barcode
+
       - name: Audit dependencies
         run: npm audit --audit-level=moderate

@@ -24,8 +24,8 @@ import type { FoodFormValues } from './foodFormValues';
  *     `product` key. The HTTP status alone is not a sufficient check, so the
  *     presence of a valid `product` is what decides success here.
  *   - Documented rate limit: 15 requests per minute per IP for product
- *     reads. A single manual scan is far below that; the throttle below
- *     stops a stuck scanner loop from getting anywhere near it.
+ *     reads. Pacing below limits this tab to at most 15 starts per minute.
+ *     Other tabs and devices on the same IP can still cause a server 429.
  */
 
 const ORIGIN = 'https://world.openfoodfacts.org';
@@ -37,8 +37,6 @@ const FIELDS = [
   'product_name_en',
   'generic_name',
   'brands',
-  'quantity',
-  'serving_size',
   'nutriments',
 ].join(',');
 
@@ -46,7 +44,13 @@ const APP_IDENTIFIER = 'gymtracker/0.1.0 (https://github.com/duvvy8/gymtracker)'
 
 /** Open Food Facts is inconsistent about numbers versus numeric strings. */
 const offNumber = z
-  .union([z.number(), z.string()])
+  .union([
+    z.number(),
+    z
+      .string()
+      .trim()
+      .regex(/^\d+(?:[.,]\d+)?$/),
+  ])
   .transform((value) =>
     typeof value === 'number' ? value : Number(value.trim().replace(',', '.')),
   )
@@ -75,14 +79,12 @@ const productSchema = z.object({
   product_name_en: offText.optional(),
   generic_name: offText.optional(),
   brands: offText.optional(),
-  quantity: z.string().max(120).optional(),
-  serving_size: z.string().max(120).optional(),
   nutriments: nutrimentsSchema.optional(),
 });
 
 const responseSchema = z.object({
   code: z.string().max(32).optional(),
-  status: z.union([z.number(), z.string()]).optional(),
+  status: z.union([z.literal(0), z.literal(1), z.literal('0'), z.literal('1')]),
   status_verbose: z.string().max(300).optional(),
   product: productSchema.optional(),
 });
@@ -96,11 +98,11 @@ export type LookupResult =
 
 /**
  * Local throttle. The documented server limit is 15 product reads per minute
- * per IP; this keeps a runaway caller an order of magnitude below it and
- * fails locally rather than earning a 429.
+ * per IP. A small margin keeps a single tab below that rate. This cannot
+ * coordinate other devices sharing the same public IP.
  */
-const MIN_MS_BETWEEN_LOOKUPS = 1200;
-let lastLookupAt = 0;
+const MIN_MS_BETWEEN_LOOKUPS = 4100;
+let lastLookupAt = -Infinity;
 
 function buildUrl(barcode: string): string {
   // barcode has already passed validateBarcode, so it is digits only. It is
@@ -153,14 +155,17 @@ export async function lookupBarcode(rawBarcode: string): Promise<LookupResult> {
 
   const barcode = validated.value;
 
-  const now = Date.now();
+  const now = performance.now();
   if (now - lastLookupAt < MIN_MS_BETWEEN_LOOKUPS) {
-    return { outcome: 'error', message: 'Slow down a moment, then try that barcode again.' };
+    return {
+      outcome: 'error',
+      message: 'Please wait a few seconds before looking up another barcode.',
+    };
   }
-  lastLookupAt = now;
 
   let payload: unknown;
   try {
+    lastLookupAt = now;
     payload = await getJson(buildUrl(barcode), {
       timeoutMs: 8000,
       // Browsers refuse to set User-Agent from fetch. X-User-Agent is the
@@ -188,7 +193,21 @@ export async function lookupBarcode(rawBarcode: string): Promise<LookupResult> {
   }
 
   const product = parsed.data.product;
-  if (!product) return { outcome: 'not-found', barcode };
+  if (parsed.data.status === 0 || parsed.data.status === '0') {
+    return { outcome: 'not-found', barcode };
+  }
+  if (!product) {
+    return {
+      outcome: 'error',
+      message: 'The product response was incomplete. Add the food manually.',
+    };
+  }
+  if ([parsed.data.code, product.code].some((code) => code !== undefined && code !== barcode)) {
+    return {
+      outcome: 'error',
+      message: 'The returned product did not match that barcode. Add the food manually.',
+    };
+  }
 
   const name = pickName(product);
   if (name === '') return { outcome: 'not-found', barcode };

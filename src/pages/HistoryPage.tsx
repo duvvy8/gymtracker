@@ -53,7 +53,7 @@ export function HistoryPage() {
     <>
       <PageHeader
         title="History"
-        description="How the last few weeks actually went, not how they were meant to go."
+        description="Review your calories, macros, and body weight over time."
         actions={
           <div
             role="group"

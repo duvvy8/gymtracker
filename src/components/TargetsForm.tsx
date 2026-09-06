@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { saveSettings } from '../db/queries';
 import { LIMITS } from '../lib/limits';
 import { energyFromMacros } from '../lib/nutrition';
-import { parseNumberInput } from '../lib/validation';
+import { parseNumberInput, isValidationError } from '../lib/validation';
 import { Button, Callout, Field, NumberInput, Select } from './ui';
 import type { Settings, WeightUnit } from '../types';
 
@@ -53,6 +53,7 @@ export function TargetsForm({
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (saving) return;
 
     const nextErrors: FieldErrors = {};
     const calories = parseNumberInput(values.calorieTarget, {
@@ -87,7 +88,7 @@ export function TargetsForm({
       setDirty(false);
       onSaved('Targets saved.');
     } catch (cause) {
-      setFormError(cause instanceof Error ? cause.message : 'Those targets could not be saved.');
+      setFormError(isValidationError(cause) ? cause.message : 'Those targets could not be saved.');
     } finally {
       setSaving(false);
     }
@@ -95,15 +96,38 @@ export function TargetsForm({
 
   // What the macro targets come to in calories, as a sanity check against
   // the calorie target. They rarely match exactly and that is fine.
-  const macroEnergy = Math.round(
-    energyFromMacros({
-      calories: 0,
-      protein: Number(values.proteinTarget.replace(',', '.')) || 0,
-      carbs: Number(values.carbTarget.replace(',', '.')) || 0,
-      fat: Number(values.fatTarget.replace(',', '.')) || 0,
-    }),
-  );
-  const calorieTarget = Number(values.calorieTarget.replace(',', '.')) || 0;
+  const previewProtein = parseNumberInput(values.proteinTarget, {
+    min: LIMITS.macroTargetMin,
+    max: LIMITS.macroTargetMax,
+    label: 'Protein',
+  });
+  const previewCarbs = parseNumberInput(values.carbTarget, {
+    min: LIMITS.macroTargetMin,
+    max: LIMITS.macroTargetMax,
+    label: 'Carbs',
+  });
+  const previewFat = parseNumberInput(values.fatTarget, {
+    min: LIMITS.macroTargetMin,
+    max: LIMITS.macroTargetMax,
+    label: 'Fat',
+  });
+  const previewCalories = parseNumberInput(values.calorieTarget, {
+    min: LIMITS.calorieTargetMin,
+    max: LIMITS.calorieTargetMax,
+    label: 'Calorie target',
+  });
+  const macroEnergy =
+    previewProtein.ok && previewCarbs.ok && previewFat.ok
+      ? Math.round(
+          energyFromMacros({
+            calories: 0,
+            protein: previewProtein.value,
+            carbs: previewCarbs.value,
+            fat: previewFat.value,
+          }),
+        )
+      : 0;
+  const calorieTarget = previewCalories.ok ? previewCalories.value : 0;
   const gap = macroEnergy - calorieTarget;
   const showGap = macroEnergy > 0 && calorieTarget > 0 && Math.abs(gap) > calorieTarget * 0.1;
 
@@ -163,7 +187,7 @@ export function TargetsForm({
       </fieldset>
 
       {showGap ? (
-        <Callout>
+        <Callout announce={false}>
           Those macro targets come to about {macroEnergy} kcal, {gap > 0 ? 'above' : 'below'} your{' '}
           {calorieTarget} kcal target. That may well be intentional.
         </Callout>
@@ -188,7 +212,7 @@ export function TargetsForm({
 
       <div className="flex justify-end">
         <Button type="submit" variant="primary" disabled={saving}>
-          Save targets
+          {saving ? 'Saving targets' : 'Save targets'}
         </Button>
       </div>
     </form>

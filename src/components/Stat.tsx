@@ -13,9 +13,8 @@ const TONE_CLASS: Record<StatTone, string> = {
 /**
  * A single figure with its label.
  *
- * These carry the same numbers the charts draw, in text. That is what makes
- * the charts' role="img" honest: the underlying values are readable without
- * interpreting a graphic.
+ * These carry the same numbers the charts draw, in text, so the data is
+ * readable without interpreting a graphic.
  */
 export function Stat({
   label,

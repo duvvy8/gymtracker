@@ -1,7 +1,8 @@
 # gymtracker
 
-A calorie and macro tracker that keeps every entry in your own browser. No account, no server, no
-sync. The only thing that ever leaves your device is a barcode number, and only when you scan one.
+A calorie and macro tracker that keeps personal entries in your browser. No account or cloud
+sync. Cloudflare serves the website. Barcode lookups check saved foods first and contact Open
+Food Facts only when there is no local match. Personal logs are not uploaded.
 
 ![The Today screen, showing calorie and macro progress against daily targets](docs/today.png)
 
@@ -29,6 +30,10 @@ different application.
 ## Running it
 
 Requires Node 20.19 or newer.
+
+The HTTP regression script (`npm run check:http`) uses native TypeScript support and requires
+Node 22.18 or newer. CI uses Node 22. It tests the network boundary without external requests,
+including stalled response bodies, byte limits, malformed responses and rejected destinations.
 
 ```bash
 npm install

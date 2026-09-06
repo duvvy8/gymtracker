@@ -23,6 +23,8 @@ function tickGapFor(pointCount: number): number {
  * same Tailwind utilities used everywhere else.
  */
 export function MacroChart({ series }: { series: DailyPoint[] }) {
+  const label = `Protein, carbohydrate and fat in grams per day over ${series.length} days.`;
+
   return (
     <>
       <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5">
@@ -34,11 +36,12 @@ export function MacroChart({ series }: { series: DailyPoint[] }) {
         ))}
       </ul>
 
-      <ChartCanvas
-        ariaLabel={`Protein, carbohydrate and fat in grams per day over ${series.length} days.`}
-      >
+      <ChartCanvas ariaLabel={label}>
         {({ width, height }) => (
+          // Named for the same reason as the calorie chart: Recharts makes the
+          // <svg> a tab stop with role="application".
           <BarChart
+            aria-label={label}
             width={width}
             height={height}
             data={series}

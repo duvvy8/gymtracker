@@ -206,24 +206,36 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
  * Feedback
  * ---------------------------------------------------------------------- */
 
+/**
+ * An inline message.
+ *
+ * `role` carries the politeness on its own: role="alert" is assertive and
+ * role="status" is polite. An explicit aria-live was previously set alongside
+ * it and silently demoted every error to polite, which is the opposite of
+ * what role="alert" was chosen for.
+ *
+ * `announce` exists for messages that are permanently on screen rather than
+ * appearing in response to an action. A static explanatory note in a live
+ * region re-announces itself whenever its text is recomputed, so those pass
+ * announce={false} and become ordinary text.
+ */
 export function Callout({
   tone = 'neutral',
   title,
   children,
-  live = 'polite',
+  announce = true,
 }: {
   tone?: 'neutral' | 'error';
   title?: string;
   children: ReactNode;
-  live?: 'polite' | 'assertive' | 'off';
+  announce?: boolean;
 }) {
   const toneClass =
     tone === 'error' ? 'border-danger bg-danger-weak text-ink' : 'border-line bg-sunken text-ink';
 
   return (
     <div
-      role={tone === 'error' ? 'alert' : 'status'}
-      aria-live={live}
+      role={announce ? (tone === 'error' ? 'alert' : 'status') : undefined}
       className={`rounded-md border px-4 py-3 text-sm ${toneClass}`}
     >
       {title ? <p className="mb-1 font-semibold">{title}</p> : null}

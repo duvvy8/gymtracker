@@ -75,6 +75,8 @@ export function LogFoodPage() {
     setLookupError(undefined);
 
     try {
+      // findFoodByBarcode is a raw Dexie read and can reject. Without a catch
+      // the busy message would simply vanish and leave nothing on screen.
       const existing = await findFoodByBarcode(barcode);
       if (existing) {
         setScannerOpen(false);
@@ -103,6 +105,8 @@ export function LogFoodPage() {
       }
 
       setLookupError(result.message);
+    } catch {
+      setLookupError('That barcode could not be looked up. Try again, or add the food by hand.');
     } finally {
       setLookupBusy(false);
     }
@@ -155,6 +159,7 @@ export function LogFoodPage() {
 
           <FoodResultList
             foods={results ?? []}
+            loading={results === undefined}
             onLog={(food) => setLogging(food)}
             onEdit={(food) =>
               setEditor({

@@ -30,14 +30,6 @@ export function addDays(iso: IsoDate, days: number): IsoDate {
   return toIsoDate(date);
 }
 
-/** Monday-based start of the week containing `iso`. */
-export function startOfWeek(iso: IsoDate): IsoDate {
-  const date = fromIsoDate(iso);
-  const weekday = (date.getDay() + 6) % 7;
-  date.setDate(date.getDate() - weekday);
-  return toIsoDate(date);
-}
-
 /** The `count` days ending on `endIso`, oldest first. */
 export function dayRange(endIso: IsoDate, count: number): IsoDate[] {
   const days: IsoDate[] = [];
