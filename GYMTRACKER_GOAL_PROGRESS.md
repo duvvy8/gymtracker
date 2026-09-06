@@ -65,3 +65,13 @@
 - Performance: initial JavaScript is 424,632 bytes raw and 131,442 bytes gzip. Programs is 23,712 and 6,307; Machines is 2,438 and 958; shared machine details are 15,516 and 4,436. History and scanner remain lazy at 380,856 and 108,630, and 481,992 and 124,883 respectively.
 - Unresolved: production deployment and live custom-domain verification remain for checkpoint 9.
 - Next: final diff review, publish, verify and push.
+
+## Checkpoint 9: Final review and production verification
+
+- Scope review: the release adds reusable workout-program templates and the confirmed machine catalogue while preserving every nutrition, history, settings, privacy and barcode path. It does not add workout execution logs, accounts, analytics, AI claims, cloud data, fake business details or unrelated fitness features.
+- Repository: feature commit `74507d8` and image-dimension correction `79aa802` are pushed to `origin/main`. Local `AGENTS.md`, `PROJECT-SUMMARY.md` and `docs/audit-progress.md` remain untracked and were not included.
+- Production: `npm run publish:site` completed against the existing Cloudflare `gymtracker` Worker and custom domain. The final deployment version is `1fa2401a-d3cd-4711-9c08-c8f1b62a65c9`.
+- Live validation: 25 of 25 HTTP checks pass for all seven routes, static metadata, a genuine 404, robots, sitemap, `llms.txt`, manifest, social card, machine asset, security headers, immutable hashed assets and a one-hop HTTP to HTTPS redirect that preserves path and query.
+- Browser validation: a hard refresh of the live Machines route on the left display is secure, has no horizontal overflow, loads the current hashed production bundle, contains no Vite development client, reports no console or network errors, and displays the 640 by 640 machine image at its correct intrinsic dimensions.
+- Unresolved: camera hardware permission and focus were not re-tested on a physical mobile device. Barcode validation, scanner resource cleanup and the secure production context are covered by code and browser checks.
+- Next: use the deployed application and collect real training feedback before adding more program behavior.
