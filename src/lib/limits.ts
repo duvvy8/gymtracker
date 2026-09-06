@@ -10,6 +10,10 @@ export const LIMITS = {
   nameMaxLength: 120,
   brandMaxLength: 80,
   servingLabelMaxLength: 60,
+  workoutNameMaxLength: 80,
+  workoutDayNameMaxLength: 60,
+  workoutNoteMaxLength: 240,
+  localIdMaxLength: 80,
 
   /** Barcode symbologies this app accepts: EAN-8, UPC-A, EAN-13. */
   barcodeLengths: [8, 12, 13] as const,
@@ -41,6 +45,18 @@ export const LIMITS = {
   calorieTargetMax: 20000,
   macroTargetMin: 0,
   macroTargetMax: 2000,
+
+  /** Workout planning bounds. */
+  workoutDaysMax: 7,
+  exercisesPerDayMax: 20,
+  setsMin: 1,
+  setsMax: 12,
+  repsMin: 1,
+  repsMax: 100,
+  restSecondsMin: 0,
+  restSecondsMax: 900,
+  sessionMinutesMin: 15,
+  sessionMinutesMax: 180,
 
   /** Ceiling on the number of records a single import may create. */
   importMaxRecordsPerTable: 50000,

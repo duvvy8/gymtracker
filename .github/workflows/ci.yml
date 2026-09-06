@@ -49,5 +49,8 @@ jobs:
       - name: Barcode regression checks
         run: npm run check:barcode
 
+      - name: Workout and machine checks
+        run: npm run check:workouts
+
       - name: Audit dependencies
         run: npm audit --audit-level=moderate

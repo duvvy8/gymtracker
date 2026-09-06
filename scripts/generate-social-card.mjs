@@ -77,14 +77,14 @@ const html = `<!doctype html>
     </div>
 
     <div>
-      <h1>Calorie and macro tracking that stays in your browser.</h1>
-      <p class="sub">No account. Your log stays in this browser. Only barcodes you scan are ever sent anywhere.</p>
+      <h1>Nutrition tracking and workout planning in your browser.</h1>
+      <p class="sub">No account. Food logs and programs stay in this browser. Only barcodes you look up are sent anywhere.</p>
     </div>
 
     <div class="strip">
-      <span class="chip"><i class="dot" style="background:${TOKENS.protein}"></i>Protein</span>
-      <span class="chip"><i class="dot" style="background:${TOKENS.carb}"></i>Carbs</span>
-      <span class="chip"><i class="dot" style="background:${TOKENS.fat}"></i>Fat</span>
+      <span class="chip"><i class="dot" style="background:${TOKENS.protein}"></i>Nutrition</span>
+      <span class="chip"><i class="dot" style="background:${TOKENS.carb}"></i>Programs</span>
+      <span class="chip"><i class="dot" style="background:${TOKENS.fat}"></i>Machines</span>
       <span class="chip" style="margin-left:auto">gymtracker.kucera.uk</span>
     </div>
   </div>

@@ -1,19 +1,20 @@
 # gymtracker
 
-A calorie and macro tracker that keeps personal entries in your browser. No account or cloud
-sync. Cloudflare serves the website. Barcode lookups check saved foods first and contact Open
-Food Facts only when there is no local match. Personal logs are not uploaded.
+A nutrition tracker and workout-program builder that keeps personal data in your browser. No
+account or cloud sync. Cloudflare serves the website. Barcode lookups check saved foods first and
+contact Open Food Facts only when there is no local match. Personal logs and programs are not
+uploaded.
 
 ![The Today screen, showing calorie and macro progress against daily targets](docs/today.png)
 
 ## Scope
 
-This tracks food. It records what you ate, adds up calories and macronutrients, compares them to
-targets you set, and charts the result over time. It also records body weight, because that is the
-number most people want next to their calorie history.
+This tracks food, body weight and reusable workout programs. Nutrition entries are added against
+daily targets and charted over time. Programs can be built manually or created by a deterministic
+local rules engine, then edited by day, exercise, sets, rep range and rest time.
 
-It does not log workouts, exercises, sets or reps, and it is not going to. Those belong in a
-different application.
+Programs are templates. The application does not record completed workouts, performance, weights
+lifted or exercise history.
 
 ## Screens
 
@@ -22,6 +23,8 @@ different application.
 | Today    | Progress against your daily targets, one tap re-logging of recent foods, and the day's entries with edit and delete. The day can be stepped backwards and forwards, so past days can be corrected. |
 | Log food | Search your saved foods by name or brand, scan a barcode, or add something new by hand.                                                                                                            |
 | History  | Daily calories against your target, macros stacked in grams, and the body weight trend, over 7 days, 30 days or 13 weeks.                                                                          |
+| Programs | Create, review, edit and delete reusable workout programs. Manual and local rules-based creation use the same editable result.                                                                     |
+| Machines | Browse the 16 confirmed gym machines by body region, with local reference images, exercise guidance and approximate muscle emphasis.                                                               |
 | Settings | Daily targets, body weight entry, export, import, and delete everything.                                                                                                                           |
 | Privacy  | What is stored, where, and the one thing that leaves the device.                                                                                                                                   |
 
@@ -52,7 +55,7 @@ works there without HTTPS.
 | `npm run lint`           | ESLint, including the security rules below                             |
 | `npm run check:tokens`   | Fails on arbitrary lengths or colour literals outside the token file   |
 | `npm run check:contrast` | Asserts the palette against WCAG 2.1 AA                                |
-| `npm run check:all`      | All four of the above                                                  |
+| `npm run check:all`      | Type, lint, design-token, contrast and workout registry checks         |
 | `npm run icons`          | Regenerates the favicon PNG and ICO files from one geometry definition |
 
 ## Design
@@ -152,6 +155,7 @@ has no image library dependency, and the SVG and the bitmaps cannot drift apart.
 src/
   db/          Dexie schema and every typed query. The only path into IndexedDB.
   components/  Presentational and interactive components, including charts/.
+  data/        Static machine and exercise registries, mappings and aliases.
   pages/       One file per route.
   lib/         Validation, dates, nutrition maths, HTTP, backup, store, design helpers.
   types/       Shared record shapes.
@@ -159,7 +163,7 @@ src/
 
 ### Data model
 
-Four tables: `foods`, `foodLogs`, `bodyWeightLogs` and `settings`.
+Five tables: `foods`, `foodLogs`, `bodyWeightLogs`, `settings` and `workoutPlans`.
 
 A food holds nutrition per serving, plus the serving's weight in grams when it is known, which is
 what makes logging by weight possible.
@@ -170,6 +174,28 @@ food id so they can still be re-scaled from the source when it does still exist.
 
 Body weight is always stored in kilograms. Kilograms or pounds is a display preference applied at
 the edge, so switching it never rewrites a record.
+
+A workout plan stores its creation mode, goal, experience level, available machines and ordered
+days. Each day stores ordered exercise snapshots with sets, rep range, optional rest and notes.
+The version 2 Dexie migration only adds this table and leaves all existing nutrition records
+unchanged. Version 1 backups remain importable and are normalized to an empty program list.
+
+### Workout planner and machine catalogue
+
+`src/data/machines.ts` is the source of truth for the 16 confirmed Matrix Aura machines. It holds
+stable model IDs, plain display names, aliases, body-region grouping, exercise mappings and rounded
+muscle-emphasis distributions. G3-S52 is deliberately absent because that machine is not confirmed
+at this gym. `src/data/exercises.ts` keeps machine, bodyweight, dumbbell and barbell movements
+separate so a free-weight exercise cannot accidentally inherit a machine image.
+
+Manual creation gives direct control over schedule and every exercise value. Automated creation
+uses the `WorkoutPlanGenerator` interface in `src/lib/planner.ts`. The current implementation is a
+deterministic local rules engine and never claims to use AI. A future provider can implement the
+same interface without changing the editor or stored plan shape.
+
+The machine images are local transparent PNGs extracted from the official 2025 Matrix Fitness
+strength catalogue. Their source and exact handling are documented in `docs/machine-assets.md`.
+No image is hotlinked at runtime.
 
 ### State
 
@@ -199,8 +225,9 @@ GET https://world.openfoodfacts.org/api/v2/product/{barcode}?fields=...
   per 1.2 seconds keeps this an order of magnitude clear of it and fails locally rather than
   earning a 429.
 
-Product images are deliberately not loaded. That keeps the content security policy's `img-src` to
-`'self' data:` and means the privacy claims above stay exactly true.
+Open Food Facts product images are deliberately not loaded. The machine reference images are local
+files served from this application, so the content security policy's `img-src` remains restricted
+to `'self' data:` and the privacy boundary does not change.
 
 A lookup prefills the food form for review rather than writing straight to the database, because
 Open Food Facts records are community edited and often incomplete.
@@ -213,11 +240,14 @@ needed:
 
 | Chunk           | Raw    | Gzipped | Loaded                         |
 | --------------- | ------ | ------- | ------------------------------ |
-| Initial         | 428 kB | 132 kB  | Always                         |
-| History         | 381 kB | 108 kB  | On opening History (Recharts)  |
-| Barcode scanner | 482 kB | 124 kB  | On opening the scanner (ZXing) |
+| Initial         | 425 kB | 131 kB  | Always                         |
+| Programs        | 24 kB  | 6 kB    | On opening Programs            |
+| Machines        | 2 kB   | 1 kB    | On opening Machines            |
+| Machine details | 16 kB  | 4 kB    | On opening machine details     |
+| History         | 381 kB | 109 kB  | On opening History (Recharts)  |
+| Barcode scanner | 482 kB | 125 kB  | On opening the scanner (ZXing) |
 
-Splitting those two out took the initial download from 365 kB gzipped to 132 kB. Someone who never
+Splitting those two out took the initial download from 365 kB gzipped to 131 kB. Someone who never
 opens History and never scans a barcode never downloads either library.
 
 ## Security
@@ -288,8 +318,8 @@ These are properties of the design, not bugs. They are stated on the Privacy scr
 
 **Your data is stored unencrypted.** IndexedDB holds it in plain form inside your browser profile.
 Anyone who can use this device while you are logged in, or who can read the browser profile folder
-from disk, can read your entire food log. This application cannot prevent that. If it matters, rely
-on your operating system account password and full disk encryption.
+from disk, can read your food log and workout programs. This application cannot prevent that. If it
+matters, rely on your operating system account password and full disk encryption.
 
 **Clearing browser data deletes everything, permanently.** There is no server and therefore no
 backup. Clearing site data, running a cleanup tool, or using private browsing wipes your whole
@@ -302,9 +332,9 @@ Opening it on another device shows an empty database.
 
 **Barcode numbers are sent to Open Food Facts.** When you scan or type a barcode, that number goes
 to `world.openfoodfacts.org`, which also sees your IP address as any web request would. Nothing
-else is ever transmitted: not your food log, not your weight, not your targets, and no identifier
-for you or your device. If you never scan a barcode, the application makes no network requests at
-all.
+else is ever transmitted: not your food log, not your weight, not your targets, not your workout
+programs, and no identifier for you or your device. If you never scan a barcode, the application
+makes no application-level third-party requests at all.
 
 ## Known issues and rough edges
 
@@ -319,6 +349,8 @@ all.
   combine two devices' logs.
 - **No Open Food Facts text search**, only barcode lookup. Their search endpoint has a tighter rate
   limit (10 per minute) and would need its own throttling and result validation.
+- **Workout programs are templates, not activity logs.** The app does not record completed sets,
+  weight lifted, timers or progression history.
 - **The 13 week view aggregates to weekly averages**, so a single unusual day is invisible at that
   range. The 30 day view shows every day.
 - **Recharts' `ResponsiveContainer` is not used**, because it was observed leaving a stale width on

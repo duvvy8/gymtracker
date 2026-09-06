@@ -1,7 +1,7 @@
 {
   "name": "gymtracker",
   "short_name": "gymtracker",
-  "description": "Calorie and macro tracker that keeps every entry in your own browser.",
+  "description": "Track nutrition, build workout programs and browse gym machines in your own browser.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

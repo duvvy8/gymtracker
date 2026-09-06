@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { countBodyWeights, countFoodLogs, countFoods } from '../db/queries';
+import { countBodyWeights, countFoodLogs, countFoods, countWorkoutPlans } from '../db/queries';
 import { DATABASE_NAME } from '../db/schema';
 import { Card, CardHeader, LinkButton, PageHeader } from '../components/ui';
 import { buttonClasses } from '../lib/buttonStyles';
@@ -22,6 +22,7 @@ export function PrivacyPage() {
       foods: await countFoods(),
       foodLogs: await countFoodLogs(),
       bodyWeights: await countBodyWeights(),
+      workoutPlans: await countWorkoutPlans(),
     }),
     [],
   );
@@ -30,7 +31,7 @@ export function PrivacyPage() {
     <>
       <PageHeader
         title="Privacy"
-        description="Where your food log lives, how barcode lookups work, and how to keep a backup."
+        description="Where your nutrition data and workout programs live, what leaves this device, and how to keep a backup."
       />
 
       <div className="grid gap-5">
@@ -39,13 +40,13 @@ export function PrivacyPage() {
 
           <Section title="What you enter">
             <p>
-              Foods you save, every entry in your food log, your body weight readings, and your
-              daily calorie and macro targets. That is the complete list. There is nothing else.
+              Foods you save, every entry in your food log, your body weight readings, daily calorie
+              and macro targets, and workout programs you create. That is the complete list.
             </p>
             {counts ? (
               <p className="numeric">
                 Right now this browser holds {counts.foods} foods, {counts.foodLogs} log entries and{' '}
-                {counts.bodyWeights} weight readings.
+                {counts.bodyWeights} weight readings and {counts.workoutPlans} workout programs.
               </p>
             ) : (
               <p className="text-ink-3">Counting what is stored in this browser.</p>
@@ -81,7 +82,8 @@ export function PrivacyPage() {
             <p>
               Cloudflare serves the app and its bundled files over HTTPS. Like any website host, it
               receives your IP address and ordinary request information when you load the site. Your
-              saved foods, food log, weight readings, and targets are not sent with those requests.
+              saved foods, food log, weight readings, targets, and workout programs are not sent
+              with those requests.
             </p>
           </Section>
 
@@ -93,8 +95,9 @@ export function PrivacyPage() {
             </p>
             <p>
               Nothing else is included. Not your food log, not your weight, not your targets, not an
-              identifier for you or this device. The request carries no cookies. If you never scan a
-              barcode or look one up manually, the app does not contact Open Food Facts.
+              identifier for you or this device, and not your workout program. The request carries
+              no cookies. If you never scan a barcode or look one up manually, the app does not
+              contact Open Food Facts.
             </p>
             <p>
               Product lookup requests are restricted to Open Food Facts. The app does not send
@@ -168,9 +171,10 @@ export function PrivacyPage() {
 
           <Section title="Deleting your data">
             <p>
-              Settings has a button that deletes every food, entry, weight reading and target from
-              this browser. It takes effect immediately and cannot be undone. You can also clear
-              this site&apos;s data through your browser settings, which has the same effect.
+              Settings has a button that deletes every food, entry, weight reading, target and
+              workout program from this browser. It takes effect immediately and cannot be undone.
+              You can also clear this site&apos;s data through your browser settings, which has the
+              same effect.
             </p>
             <div className="pt-1">
               <LinkButton to="/settings">Go to Settings</LinkButton>

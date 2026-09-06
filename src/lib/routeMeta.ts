@@ -13,15 +13,15 @@ export interface RouteMeta {
   title: string;
   /** Full label, used in the rail and the mobile menu. */
   navLabel: string;
-  /** Short label for the bottom tab bar, where four items share the width. */
+  /** Short label for the bottom tab bar, where five items share the width. */
   tabLabel: string;
   description: string;
   /**
    * Whether the route is worth putting in front of a search engine.
    *
-   * Log food, History and Settings depend on local data and stay out of the
-   * index. The home page introduces the app to new visitors and Privacy
-   * explains its storage boundary, so those two routes are indexable.
+   * Log food, Programs, History and Settings depend on local data and stay out
+   * of the index. The home page introduces the app, Machines documents the
+   * available equipment, and Privacy explains its storage boundary.
    */
   indexable: boolean;
 }
@@ -29,11 +29,11 @@ export interface RouteMeta {
 export const ROUTES = {
   today: {
     path: '/',
-    title: 'gymtracker: calorie and macro tracker that stays in your browser',
+    title: 'gymtracker: nutrition and workout planning in your browser',
     navLabel: 'Today',
     tabLabel: 'Today',
     description:
-      'Track calories and macros with a food log stored in your browser. No account or cloud sync. Search saved foods or look up a barcode, then review daily progress.',
+      'Track calories and macros, build workout programs and browse your gym machines. Personal data stays in your browser with no account or cloud sync.',
     indexable: true,
   },
   log: {
@@ -53,6 +53,24 @@ export const ROUTES = {
     description:
       'Daily calories against your target, macros over time, and your body weight trend across the last week, month or thirteen weeks.',
     indexable: false,
+  },
+  programs: {
+    path: '/programs',
+    title: 'Workout programs: gymtracker',
+    navLabel: 'Programs',
+    tabLabel: 'Programs',
+    description:
+      'Build and edit a local workout program by hand or create a deterministic draft from your schedule, goals and available equipment.',
+    indexable: false,
+  },
+  machines: {
+    path: '/machines',
+    title: 'Gym machines and muscle emphasis: gymtracker',
+    navLabel: 'Machines',
+    tabLabel: 'Machines',
+    description:
+      'Browse the confirmed gym machine catalogue, exercise instructions and approximate muscle emphasis for each station.',
+    indexable: true,
   },
   settings: {
     path: '/settings',
@@ -82,16 +100,17 @@ export const ROUTES = {
   },
 } as const satisfies Record<string, RouteMeta>;
 
-/** The four destinations reachable in one tap from the bottom tab bar. */
+/** The five destinations reachable in one tap from the bottom tab bar. */
 export const PRIMARY_ROUTES: RouteMeta[] = [
   ROUTES.today,
   ROUTES.log,
+  ROUTES.programs,
+  ROUTES.machines,
   ROUTES.history,
-  ROUTES.settings,
 ];
 
 /** Everything a person can navigate to, in the order the menu lists them. */
-export const ALL_ROUTES: RouteMeta[] = [...PRIMARY_ROUTES, ROUTES.privacy];
+export const ALL_ROUTES: RouteMeta[] = [...PRIMARY_ROUTES, ROUTES.settings, ROUTES.privacy];
 
 /** Routes that belong in sitemap.xml, which is exactly the indexable ones. */
 export const INDEXABLE_ROUTES: RouteMeta[] = ALL_ROUTES.filter((route) => route.indexable);

@@ -195,3 +195,46 @@ export function IconMenu(props: IconProps) {
     </Icon>
   );
 }
+
+export function IconPrograms(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 3.5h11a2 2 0 0 1 2 2v11H6a2 2 0 0 1-2-2z" />
+      <path d="M4 13.5h13M7 7h7M7 10h5" />
+    </Icon>
+  );
+}
+
+export function IconMachines(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 17V5h3v12M12 17V5h3v12M3 17h14" />
+      <path d="M8 8h4M8 14h4" />
+    </Icon>
+  );
+}
+
+export function IconExpand(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 8V4h4M12 4h4v4M16 12v4h-4M8 16H4v-4" />
+      <path d="M8 8 4.4 4.4M12 8l3.6-3.6M12 12l3.6 3.6M8 12l-3.6 3.6" />
+    </Icon>
+  );
+}
+
+export function IconArrowUp(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M10 16V4M5.5 8.5 10 4l4.5 4.5" />
+    </Icon>
+  );
+}
+
+export function IconArrowDown(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M10 4v12M5.5 11.5 10 16l4.5-4.5" />
+    </Icon>
+  );
+}

@@ -1,14 +1,15 @@
 import { z } from 'zod';
-import { LIMITS } from './limits';
+import { LIMITS } from './limits.ts';
 import {
   bodyWeightLogSchema,
   describeIssue,
   foodLogSchema,
   foodSchema,
   settingsSchema,
+  workoutPlanSchema,
   type ParseResult,
-} from './validation';
-import type { BackupFile, BodyWeightLog, Food, FoodLog, Settings } from '../types';
+} from './validation.ts';
+import type { BackupFile, BodyWeightLog, Food, FoodLog, Settings, WorkoutPlan } from '../types';
 
 /**
  * Export and import of the whole database.
@@ -70,7 +71,7 @@ export function findForbiddenKey(value: unknown, depth = 0): string | null {
   return null;
 }
 
-const backupSchema = z.object({
+const backupV1Schema = z.object({
   format: z.literal('gymtracker-backup'),
   version: z.literal(1),
   exportedAt: z.string().max(64).optional(),
@@ -79,6 +80,19 @@ const backupSchema = z.object({
   bodyWeightLogs: z.array(bodyWeightLogSchema).max(LIMITS.importMaxRecordsPerTable),
   settings: settingsSchema.nullish(),
 });
+
+const backupV2Schema = z.object({
+  format: z.literal('gymtracker-backup'),
+  version: z.literal(2),
+  exportedAt: z.string().max(64).optional(),
+  foods: z.array(foodSchema).max(LIMITS.importMaxRecordsPerTable),
+  foodLogs: z.array(foodLogSchema).max(LIMITS.importMaxRecordsPerTable),
+  bodyWeightLogs: z.array(bodyWeightLogSchema).max(LIMITS.importMaxRecordsPerTable),
+  settings: settingsSchema.nullish(),
+  workoutPlans: z.array(workoutPlanSchema).max(LIMITS.importMaxRecordsPerTable),
+});
+
+const backupSchema = z.discriminatedUnion('version', [backupV1Schema, backupV2Schema]);
 
 type ValidatedBackup = z.infer<typeof backupSchema>;
 
@@ -152,6 +166,39 @@ function rebuildSettings(input: NonNullable<ValidatedBackup['settings']>): Setti
   };
 }
 
+function rebuildWorkoutPlan(input: WorkoutPlan): WorkoutPlan {
+  const plan: WorkoutPlan = {
+    name: input.name,
+    creationMode: input.creationMode,
+    goal: input.goal,
+    experience: input.experience,
+    sessionMinutes: input.sessionMinutes,
+    priorityRegions: input.priorityRegions.map((region) => region),
+    availableMachineIds: input.availableMachineIds.map((id) => id),
+    days: input.days.map((day) => ({
+      id: day.id,
+      weekday: day.weekday,
+      name: day.name,
+      exercises: day.exercises.map((exercise) => ({
+        id: exercise.id,
+        exerciseId: exercise.exerciseId,
+        name: exercise.name,
+        equipment: exercise.equipment,
+        machineIds: exercise.machineIds.map((id) => id),
+        sets: exercise.sets,
+        repsMin: exercise.repsMin,
+        repsMax: exercise.repsMax,
+        ...(exercise.restSeconds === undefined ? {} : { restSeconds: exercise.restSeconds }),
+        ...(exercise.notes === undefined ? {} : { notes: exercise.notes }),
+      })),
+    })),
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt,
+  };
+  if (input.id !== undefined) plan.id = input.id;
+  return plan;
+}
+
 /* -------------------------------------------------------------------------
  * Parsing
  * ---------------------------------------------------------------------- */
@@ -197,12 +244,14 @@ export function parseBackup(text: string): ParseResult<BackupFile> {
     ok: true,
     value: {
       format: 'gymtracker-backup',
-      version: 1,
+      version: 2,
       exportedAt: data.exportedAt ?? new Date().toISOString(),
       foods: data.foods.map(rebuildFood),
       foodLogs: data.foodLogs.map(rebuildFoodLog),
       bodyWeightLogs: data.bodyWeightLogs.map(rebuildBodyWeight),
       settings: data.settings ? rebuildSettings(data.settings) : null,
+      workoutPlans:
+        data.version === 2 ? data.workoutPlans.map((plan) => rebuildWorkoutPlan(plan)) : [],
     },
   };
 }

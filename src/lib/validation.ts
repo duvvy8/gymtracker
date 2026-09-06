@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LIMITS } from './limits';
+import { LIMITS } from './limits.ts';
 
 /* -------------------------------------------------------------------------
  * Primitives
@@ -205,6 +205,77 @@ export const settingsSchema = z.object({
   updatedAt: finiteNumber.int().nonnegative(),
 });
 
+export const machineIdSchema = z.enum([
+  'G3-S10',
+  'G3-S12',
+  'G3-S20',
+  'G3-S21',
+  'G3-S30',
+  'G3-S31',
+  'G3-S40',
+  'G3-S42',
+  'G3-S51',
+  'G3-S60',
+  'G3-S70',
+  'G3-S71',
+  'G3-S72',
+  'G3-S73',
+  'G3-S74',
+  'G3-S75',
+]);
+
+export const machineRegionSchema = z.enum(['Chest', 'Back', 'Shoulders', 'Arms', 'Core', 'Legs']);
+export const workoutGoalSchema = z.enum(['general', 'muscle', 'strength', 'endurance']);
+export const experienceLevelSchema = z.enum(['beginner', 'intermediate', 'advanced']);
+export const weekdaySchema = z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+
+export const plannedExerciseSchema = z
+  .object({
+    id: boundedText(LIMITS.localIdMaxLength).pipe(z.string().min(1)),
+    exerciseId: boundedText(LIMITS.localIdMaxLength).pipe(z.string().min(1)),
+    name: boundedText(LIMITS.nameMaxLength).pipe(z.string().min(1)),
+    equipment: z.enum(['machine', 'bodyweight', 'dumbbell', 'barbell']),
+    machineIds: z.array(machineIdSchema).max(8),
+    sets: finiteNumber.int().min(LIMITS.setsMin).max(LIMITS.setsMax),
+    repsMin: finiteNumber.int().min(LIMITS.repsMin).max(LIMITS.repsMax),
+    repsMax: finiteNumber.int().min(LIMITS.repsMin).max(LIMITS.repsMax),
+    restSeconds: finiteNumber
+      .int()
+      .min(LIMITS.restSecondsMin)
+      .max(LIMITS.restSecondsMax)
+      .optional(),
+    notes: boundedText(LIMITS.workoutNoteMaxLength).optional(),
+  })
+  .refine((entry) => entry.repsMax >= entry.repsMin, {
+    path: ['repsMax'],
+    message: 'Maximum reps must be at least minimum reps',
+  })
+  .refine((entry) => entry.equipment === 'machine' || entry.machineIds.length === 0, {
+    path: ['machineIds'],
+    message: 'Only machine exercises can reference a machine',
+  });
+
+export const workoutDaySchema = z.object({
+  id: boundedText(LIMITS.localIdMaxLength).pipe(z.string().min(1)),
+  weekday: weekdaySchema,
+  name: boundedText(LIMITS.workoutDayNameMaxLength).pipe(z.string().min(1)),
+  exercises: z.array(plannedExerciseSchema).max(LIMITS.exercisesPerDayMax),
+});
+
+export const workoutPlanSchema = z.object({
+  id: z.number().int().positive().optional(),
+  name: boundedText(LIMITS.workoutNameMaxLength).pipe(z.string().min(1)),
+  creationMode: z.enum(['manual', 'automated']),
+  goal: workoutGoalSchema,
+  experience: experienceLevelSchema,
+  sessionMinutes: finiteNumber.int().min(LIMITS.sessionMinutesMin).max(LIMITS.sessionMinutesMax),
+  priorityRegions: z.array(machineRegionSchema).max(6),
+  availableMachineIds: z.array(machineIdSchema).max(16),
+  days: z.array(workoutDaySchema).min(1).max(LIMITS.workoutDaysMax),
+  createdAt: finiteNumber.int().nonnegative(),
+  updatedAt: finiteNumber.int().nonnegative(),
+});
+
 /* -------------------------------------------------------------------------
  * Turning a schema failure into something worth reading
  * ---------------------------------------------------------------------- */
@@ -225,6 +296,15 @@ const FIELD_LABELS: Record<string, string> = {
   proteinTarget: 'Protein target',
   servingGrams: 'Serving weight',
   servingLabel: 'Serving description',
+  sets: 'Sets',
+  repsMin: 'Minimum reps',
+  repsMax: 'Maximum reps',
+  restSeconds: 'Rest time',
+  sessionMinutes: 'Session duration',
+  priorityRegions: 'Muscle priorities',
+  availableMachineIds: 'Available machines',
+  days: 'Training days',
+  exercises: 'Exercises',
   unit: 'Unit',
   weightKg: 'Weight',
 };

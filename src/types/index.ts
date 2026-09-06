@@ -88,13 +88,118 @@ export interface Macros {
   fat: number;
 }
 
+export type MachineId =
+  | 'G3-S10'
+  | 'G3-S12'
+  | 'G3-S20'
+  | 'G3-S21'
+  | 'G3-S30'
+  | 'G3-S31'
+  | 'G3-S40'
+  | 'G3-S42'
+  | 'G3-S51'
+  | 'G3-S60'
+  | 'G3-S70'
+  | 'G3-S71'
+  | 'G3-S72'
+  | 'G3-S73'
+  | 'G3-S74'
+  | 'G3-S75';
+
+export type MachineRegion = 'Chest' | 'Back' | 'Shoulders' | 'Arms' | 'Core' | 'Legs';
+
+export interface MuscleEmphasis {
+  muscle: string;
+  percent: number;
+  role: 'primary' | 'secondary';
+}
+
+export interface GymMachine {
+  id: MachineId;
+  displayName: string;
+  imagePath?: string;
+  alt: string;
+  aliases: readonly string[];
+  exerciseIds: readonly string[];
+  region: MachineRegion;
+  emphasis: readonly MuscleEmphasis[];
+  enabled: boolean;
+  /** Reserved for location-specific or equivalent equipment later. */
+  alternatives: readonly MachineId[];
+}
+
+export type ExerciseEquipment = 'machine' | 'bodyweight' | 'dumbbell' | 'barbell';
+
+export interface ExerciseDefinition {
+  id: string;
+  name: string;
+  equipment: ExerciseEquipment;
+  primaryMuscles: readonly string[];
+  secondaryMuscles: readonly string[];
+  /** Ordered so the first entry is the canonical machine shown today. */
+  machineIds: readonly MachineId[];
+  setup: string;
+  instructions: readonly string[];
+}
+
+export type WorkoutGoal = 'general' | 'muscle' | 'strength' | 'endurance';
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
+export type WorkoutCreationMode = 'manual' | 'automated';
+export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+export interface PlannedExercise {
+  id: string;
+  exerciseId: string;
+  /** Snapshots keep a saved plan understandable if the catalogue changes. */
+  name: string;
+  equipment: ExerciseEquipment;
+  machineIds: MachineId[];
+  sets: number;
+  repsMin: number;
+  repsMax: number;
+  restSeconds?: number;
+  notes?: string;
+}
+
+export interface WorkoutDay {
+  id: string;
+  weekday: Weekday;
+  name: string;
+  exercises: PlannedExercise[];
+}
+
+export interface WorkoutPlan {
+  id?: number;
+  name: string;
+  creationMode: WorkoutCreationMode;
+  goal: WorkoutGoal;
+  experience: ExperienceLevel;
+  sessionMinutes: number;
+  priorityRegions: MachineRegion[];
+  availableMachineIds: MachineId[];
+  days: WorkoutDay[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface PlannerPreferences {
+  name: string;
+  goal: WorkoutGoal;
+  experience: ExperienceLevel;
+  sessionMinutes: number;
+  trainingDays: Weekday[];
+  priorityRegions: MachineRegion[];
+  availableMachineIds: MachineId[];
+}
+
 /** Shape of an export file, and of anything accepted by import. */
 export interface BackupFile {
   format: 'gymtracker-backup';
-  version: 1;
+  version: 2;
   exportedAt: string;
   foods: Food[];
   foodLogs: FoodLog[];
   bodyWeightLogs: BodyWeightLog[];
   settings: Settings | null;
+  workoutPlans: WorkoutPlan[];
 }

@@ -127,6 +127,8 @@ function structuredData(): string {
           'Calorie and macronutrient tracking',
           'Barcode scanning with Open Food Facts lookup',
           'Body weight tracking',
+          'Local workout program creation and editing',
+          'Gym machine catalogue with exercise guidance',
           'Local-first storage in the browser, with no account',
           'Export and import of all data as JSON',
         ],
@@ -160,7 +162,7 @@ function headFor(path: string): string {
     `<meta property="og:image" content="${image}" />`,
     `<meta property="og:image:width" content="${SOCIAL_IMAGE_WIDTH}" />`,
     `<meta property="og:image:height" content="${SOCIAL_IMAGE_HEIGHT}" />`,
-    '<meta property="og:image:alt" content="gymtracker: a calorie and macro tracker that keeps every entry in your own browser." />',
+    '<meta property="og:image:alt" content="gymtracker: nutrition tracking, workout programs and gym machines, stored in your browser." />',
     '<meta name="twitter:card" content="summary_large_image" />',
     `<meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY_META}" />`,
   ];

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Offline calorie and macro tracker. All data stays in the browser.",
+  "description": "Local nutrition tracker, workout program builder and gym machine catalogue.",
   "license": "MIT",
   "engines": {
     "node": ">=20.19.0"
@@ -21,7 +21,8 @@
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:http": "node scripts/check-http.mjs",
     "check:barcode": "node scripts/check-barcode.mjs",
-    "check:all": "npm run typecheck && npm run lint && npm run check:tokens && npm run check:contrast",
+    "check:workouts": "node scripts/check-workouts.mjs",
+    "check:all": "npm run typecheck && npm run lint && npm run check:tokens && npm run check:contrast && npm run check:workouts",
     "icons": "node scripts/generate-icons.mjs",
     "deploy": "npm run build && wrangler deploy",
     "publish:site": "npm run check:all && npm run deploy",

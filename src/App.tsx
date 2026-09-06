@@ -23,6 +23,12 @@ const SettingsPage = lazy(() =>
 const PrivacyPage = lazy(() =>
   import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
 );
+const ProgramsPage = lazy(() =>
+  import('./pages/ProgramsPage').then((m) => ({ default: m.ProgramsPage })),
+);
+const MachinesPage = lazy(() =>
+  import('./pages/MachinesPage').then((m) => ({ default: m.MachinesPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -51,6 +57,8 @@ export function App() {
         <Route index element={<TodayPage />} />
         <Route path="log" element={<LogFoodPage />} />
         <Route path="history" element={lazyRoute(<HistoryPage />)} />
+        <Route path="programs" element={lazyRoute(<ProgramsPage />)} />
+        <Route path="machines" element={lazyRoute(<MachinesPage />)} />
         <Route path="settings" element={lazyRoute(<SettingsPage />)} />
         <Route path="privacy" element={lazyRoute(<PrivacyPage />)} />
         {/* A real not-found screen. Redirecting unknown paths to Today would

@@ -5,13 +5,24 @@ import { useDocumentMeta } from '../lib/useDocumentMeta';
 import { MobileMenu } from './MobileMenu';
 import { NoticeBar } from './NoticeBar';
 import { SiteFooter } from './SiteFooter';
-import { IconHistory, IconLog, IconMenu, IconPrivacy, IconSettings, IconToday } from './icons';
+import {
+  IconHistory,
+  IconLog,
+  IconMachines,
+  IconMenu,
+  IconPrivacy,
+  IconPrograms,
+  IconSettings,
+  IconToday,
+} from './icons';
 import { Button } from './ui';
 
 const ROUTE_ICONS: Record<string, typeof IconToday> = {
   '/': IconToday,
   '/log': IconLog,
   '/history': IconHistory,
+  '/programs': IconPrograms,
+  '/machines': IconMachines,
   '/settings': IconSettings,
   '/privacy': IconPrivacy,
 };
@@ -103,7 +114,7 @@ export function AppShell() {
           <Wordmark className="text-lg" />
         </div>
         <nav aria-label="Primary" className="flex flex-col py-3">
-          {[...PRIMARY_ROUTES, ROUTES.privacy].map(({ path, navLabel }) => {
+          {[...PRIMARY_ROUTES, ROUTES.settings, ROUTES.privacy].map(({ path, navLabel }) => {
             const Icon = ROUTE_ICONS[path] ?? IconToday;
             return (
               <NavLink key={path} to={path} end={path === '/'} className={railLinkClass}>
@@ -154,7 +165,7 @@ export function AppShell() {
         <SiteFooter />
       </div>
 
-      {/* Narrow layout: the four destinations used daily, in the thumb zone. */}
+      {/* Narrow layout: the five destinations used most often, in the thumb zone. */}
       <nav
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-30 flex h-15 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"

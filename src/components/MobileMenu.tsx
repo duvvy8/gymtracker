@@ -7,7 +7,7 @@ import { Button } from './ui';
 /**
  * The complete navigation map on narrow screens.
  *
- * The bottom tab bar carries the four destinations people reach for daily.
+ * The bottom tab bar carries the five destinations people reach for daily.
  * This drawer carries everything, including Privacy, plus the context that
  * does not belong on a tab.
  *
@@ -83,7 +83,8 @@ export function MobileMenu({
 
       <div className="shrink-0 border-t border-line px-4 py-4">
         <p className="text-sm text-ink-3">
-          Your food log stays in this browser. Barcode lookups use Open Food Facts.
+          Your food log and workout programs stay in this browser. Barcode lookups use Open Food
+          Facts.
         </p>
       </div>
     </dialog>

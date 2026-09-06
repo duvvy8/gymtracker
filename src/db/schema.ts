@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { BodyWeightLog, Food, FoodLog, Settings } from '../types';
+import type { BodyWeightLog, Food, FoodLog, Settings, WorkoutPlan } from '../types';
 
 export const DATABASE_NAME = 'gymtracker';
 
@@ -29,6 +29,7 @@ export class GymTrackerDatabase extends Dexie {
   foodLogs!: Table<FoodLog, number>;
   bodyWeightLogs!: Table<BodyWeightLog, number>;
   settings!: Table<Settings, string>;
+  workoutPlans!: Table<WorkoutPlan, number>;
 
   constructor() {
     super(DATABASE_NAME);
@@ -38,6 +39,16 @@ export class GymTrackerDatabase extends Dexie {
       foodLogs: '++id, date, foodId, createdAt',
       bodyWeightLogs: '++id, &date',
       settings: 'id',
+    });
+
+    // Adding a table is non-destructive. Dexie keeps every v1 store and all
+    // existing nutrition data while creating the new workout-plan store.
+    this.version(2).stores({
+      foods: '++id, nameLower, barcode, updatedAt',
+      foodLogs: '++id, date, foodId, createdAt',
+      bodyWeightLogs: '++id, &date',
+      settings: 'id',
+      workoutPlans: '++id, creationMode, updatedAt',
     });
   }
 }

@@ -8,9 +8,18 @@ import {
   foodSchema,
   sanitizeText,
   settingsSchema,
+  workoutPlanSchema,
   ValidationError,
 } from '../lib/validation';
-import type { BackupFile, BodyWeightLog, Food, FoodLog, IsoDate, Settings } from '../types';
+import type {
+  BackupFile,
+  BodyWeightLog,
+  Food,
+  FoodLog,
+  IsoDate,
+  Settings,
+  WorkoutPlan,
+} from '../types';
 
 /**
  * Every write in this module goes through a zod schema first. There is no
@@ -225,25 +234,90 @@ export function countBodyWeights(): Promise<number> {
 }
 
 /* -------------------------------------------------------------------------
+ * Workout plans
+ * ---------------------------------------------------------------------- */
+
+export type WorkoutPlanDraft = Omit<WorkoutPlan, 'id' | 'createdAt' | 'updatedAt'> & {
+  id?: number;
+};
+
+export async function saveWorkoutPlan(draft: WorkoutPlanDraft): Promise<number> {
+  const now = Date.now();
+  const existing = draft.id ? await db.workoutPlans.get(draft.id) : undefined;
+  const record = parseOrThrow(
+    workoutPlanSchema,
+    {
+      ...(draft.id ? { id: draft.id } : {}),
+      name: draft.name,
+      creationMode: draft.creationMode,
+      goal: draft.goal,
+      experience: draft.experience,
+      sessionMinutes: draft.sessionMinutes,
+      priorityRegions: [...draft.priorityRegions],
+      availableMachineIds: [...draft.availableMachineIds],
+      days: draft.days.map((day) => ({
+        id: day.id,
+        weekday: day.weekday,
+        name: day.name,
+        exercises: day.exercises.map((exercise) => ({
+          id: exercise.id,
+          exerciseId: exercise.exerciseId,
+          name: exercise.name,
+          equipment: exercise.equipment,
+          machineIds: [...exercise.machineIds],
+          sets: exercise.sets,
+          repsMin: exercise.repsMin,
+          repsMax: exercise.repsMax,
+          ...(exercise.restSeconds === undefined ? {} : { restSeconds: exercise.restSeconds }),
+          ...(exercise.notes ? { notes: exercise.notes } : {}),
+        })),
+      })),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    },
+    'This program',
+  );
+  return db.workoutPlans.put(record as WorkoutPlan);
+}
+
+export function getWorkoutPlan(id: number): Promise<WorkoutPlan | undefined> {
+  return db.workoutPlans.get(id);
+}
+
+export function listWorkoutPlans(): Promise<WorkoutPlan[]> {
+  return db.workoutPlans.orderBy('updatedAt').reverse().toArray();
+}
+
+export async function deleteWorkoutPlan(id: number): Promise<void> {
+  await db.workoutPlans.delete(id);
+}
+
+export function countWorkoutPlans(): Promise<number> {
+  return db.workoutPlans.count();
+}
+
+/* -------------------------------------------------------------------------
  * Whole-database operations
  * ---------------------------------------------------------------------- */
 
 export async function exportAll(): Promise<BackupFile> {
-  const [foods, foodLogs, bodyWeightLogs, settings] = await Promise.all([
+  const [foods, foodLogs, bodyWeightLogs, settings, workoutPlans] = await Promise.all([
     db.foods.toArray(),
     db.foodLogs.toArray(),
     db.bodyWeightLogs.toArray(),
     db.settings.get(SETTINGS_KEY),
+    db.workoutPlans.toArray(),
   ]);
 
   return {
     format: 'gymtracker-backup',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     foods,
     foodLogs,
     bodyWeightLogs,
     settings: settings ?? null,
+    workoutPlans,
   };
 }
 
@@ -254,28 +328,39 @@ export async function exportAll(): Promise<BackupFile> {
  * rolls the whole thing back and the existing data survives untouched.
  */
 export async function replaceAllData(backup: BackupFile): Promise<void> {
-  await db.transaction('rw', [db.foods, db.foodLogs, db.bodyWeightLogs, db.settings], async () => {
-    await Promise.all([
-      db.foods.clear(),
-      db.foodLogs.clear(),
-      db.bodyWeightLogs.clear(),
-      db.settings.clear(),
-    ]);
+  await db.transaction(
+    'rw',
+    [db.foods, db.foodLogs, db.bodyWeightLogs, db.settings, db.workoutPlans],
+    async () => {
+      await Promise.all([
+        db.foods.clear(),
+        db.foodLogs.clear(),
+        db.bodyWeightLogs.clear(),
+        db.settings.clear(),
+        db.workoutPlans.clear(),
+      ]);
 
-    if (backup.foods.length > 0) await db.foods.bulkAdd(backup.foods);
-    if (backup.foodLogs.length > 0) await db.foodLogs.bulkAdd(backup.foodLogs);
-    if (backup.bodyWeightLogs.length > 0) await db.bodyWeightLogs.bulkAdd(backup.bodyWeightLogs);
-    if (backup.settings) await db.settings.put(backup.settings);
-  });
+      if (backup.foods.length > 0) await db.foods.bulkAdd(backup.foods);
+      if (backup.foodLogs.length > 0) await db.foodLogs.bulkAdd(backup.foodLogs);
+      if (backup.bodyWeightLogs.length > 0) await db.bodyWeightLogs.bulkAdd(backup.bodyWeightLogs);
+      if (backup.settings) await db.settings.put(backup.settings);
+      if (backup.workoutPlans.length > 0) await db.workoutPlans.bulkAdd(backup.workoutPlans);
+    },
+  );
 }
 
 export async function clearAllData(): Promise<void> {
-  await db.transaction('rw', [db.foods, db.foodLogs, db.bodyWeightLogs, db.settings], async () => {
-    await Promise.all([
-      db.foods.clear(),
-      db.foodLogs.clear(),
-      db.bodyWeightLogs.clear(),
-      db.settings.clear(),
-    ]);
-  });
+  await db.transaction(
+    'rw',
+    [db.foods, db.foodLogs, db.bodyWeightLogs, db.settings, db.workoutPlans],
+    async () => {
+      await Promise.all([
+        db.foods.clear(),
+        db.foodLogs.clear(),
+        db.bodyWeightLogs.clear(),
+        db.settings.clear(),
+        db.workoutPlans.clear(),
+      ]);
+    },
+  );
 }

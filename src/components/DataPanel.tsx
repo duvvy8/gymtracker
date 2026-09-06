@@ -24,7 +24,7 @@ export function DataPanel({
   counts,
   onNotice,
 }: {
-  counts: { foods: number; foodLogs: number; bodyWeights: number };
+  counts: { foods: number; foodLogs: number; bodyWeights: number; workoutPlans: number };
   onNotice: (message: string, tone?: 'info' | 'error') => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,9 +128,9 @@ export function DataPanel({
       <section>
         <h3 className="text-base font-semibold">Export</h3>
         <p className="mt-1 max-w-(--container-measure) text-sm text-ink-2">
-          Writes every food, entry, weight reading and target to a JSON file on this device. Nothing
-          is uploaded. Keep a copy somewhere else, because clearing your browser data deletes
-          everything this app has stored.
+          Writes every food, entry, weight reading, target and workout program to a JSON file on
+          this device. Nothing is uploaded. Keep a copy somewhere else, because clearing your
+          browser data deletes everything this app has stored.
         </p>
         <div className="mt-3">
           <Button onClick={() => void handleExport()} disabled={busy}>
@@ -139,7 +139,8 @@ export function DataPanel({
           </Button>
         </div>
         <p className="mt-2 numeric text-xs text-ink-3">
-          {counts.foods} foods · {counts.foodLogs} entries · {counts.bodyWeights} weight readings
+          {counts.foods} foods · {counts.foodLogs} entries · {counts.bodyWeights} weight readings ·{' '}
+          {counts.workoutPlans} programs
         </p>
       </section>
 
@@ -183,11 +184,11 @@ export function DataPanel({
             <p className="mt-1 numeric text-sm text-ink-2">
               {pending.fileName} holds {pending.backup.foods.length} foods,{' '}
               {pending.backup.foodLogs.length} entries and {pending.backup.bodyWeightLogs.length}{' '}
-              weight readings.
+              weight readings and {pending.backup.workoutPlans.length} programs.
             </p>
             <p className="mt-1 text-sm text-ink-2">
               Your current {counts.foods} foods, {counts.foodLogs} entries and {counts.bodyWeights}{' '}
-              weight readings will be deleted.
+              weight readings and {counts.workoutPlans} programs will be deleted.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button ref={cancelImportRef} onClick={() => setPending(null)} disabled={busy}>
@@ -204,8 +205,9 @@ export function DataPanel({
       <section className="border-t border-line pt-5">
         <h3 className="text-base font-semibold">Delete everything</h3>
         <p className="mt-1 max-w-(--container-measure) text-sm text-ink-2">
-          Removes every food, entry, weight reading and target from this browser. There is no undo
-          and the app keeps no automatic backup. Exported backup files are not deleted.
+          Removes every food, entry, weight reading, target and workout program from this browser.
+          There is no undo and the app keeps no automatic backup. Exported backup files are not
+          deleted.
         </p>
 
         {!confirmingClear ? (
@@ -217,8 +219,8 @@ export function DataPanel({
         ) : (
           <div className="mt-3 rounded-md border border-danger bg-danger-weak px-4 py-3">
             <p className="text-sm font-semibold text-ink">
-              Delete {counts.foods} foods, {counts.foodLogs} entries and {counts.bodyWeights} weight
-              readings?
+              Delete {counts.foods} foods, {counts.foodLogs} entries, {counts.bodyWeights} weight
+              readings and {counts.workoutPlans} programs?
             </p>
             <p className="mt-1 text-sm text-ink-2">
               This cannot be undone. Download a backup first if you might want any of it back.

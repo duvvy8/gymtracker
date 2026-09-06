@@ -1,5 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { countBodyWeights, countFoodLogs, countFoods, getSettings } from '../db/queries';
+import {
+  countBodyWeights,
+  countFoodLogs,
+  countFoods,
+  countWorkoutPlans,
+  getSettings,
+} from '../db/queries';
 import { useAppStore } from '../lib/store';
 import { BodyWeightPanel } from '../components/BodyWeightPanel';
 import { DataPanel } from '../components/DataPanel';
@@ -15,6 +21,7 @@ export function SettingsPage() {
       foods: await countFoods(),
       foodLogs: await countFoodLogs(),
       bodyWeights: await countBodyWeights(),
+      workoutPlans: await countWorkoutPlans(),
     }),
     [],
   );

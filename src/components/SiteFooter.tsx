@@ -21,7 +21,8 @@ export function SiteFooter() {
       <div className="mx-auto w-full max-w-(--container-wide) px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-ink-2">
-            Your food log stays in this browser. Barcode lookups use Open Food Facts.
+            Your food log and workout programs stay in this browser. Barcode lookups use Open Food
+            Facts.
           </p>
 
           <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-5 gap-y-2">
