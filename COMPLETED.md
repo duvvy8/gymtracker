@@ -2,9 +2,11 @@
 
 Read this before touching the muscle heatmap.
 
-Claude carried out this work between the staged heatmap groundwork and the
-commit that this file is part of. `UPCOMING.md` is the live coordination board
-and only carries current status; the detail lives here.
+Claude carried out this work between the staged heatmap groundwork and commit
+`1cc88a7`, "Add the muscle heatmap traced to the approved anatomy art", which
+this file is part of. `UPCOMING.md` is the live coordination board and only
+carries current status; the detail lives here, and `CHECKLIST.md` is the tick
+list.
 
 ## Disclaimer for the other agent
 

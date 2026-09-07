@@ -32,7 +32,7 @@ detail for each one is in [COMPLETED.md](COMPLETED.md).
 - [x] Keep the map and the percentage bars reading the same source data
 - [x] Update the logic checks and the anatomy documentation
 - [x] Run lint, typecheck, token, contrast, workout checks and the build
-- [x] Commit
+- [x] Commit — `1cc88a7`
 
 ## Still open
 
