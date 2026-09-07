@@ -108,6 +108,7 @@
   /* One short spatial transition for opening a machine reference image. */
   --duration-fast: 180ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --scale-machine-image: 1.55;
 
   /* ---- Breakpoints ---- */
   --breakpoint-*: initial;
