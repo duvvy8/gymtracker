@@ -12,6 +12,7 @@ export function MachineImagePanel({
   detail?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const thumbnailPath = machine.imagePath?.replace(/\.webp$/, '-600.webp');
 
   return (
     <>
@@ -21,13 +22,13 @@ export function MachineImagePanel({
         {machine.imagePath ? (
           <>
             <img
-              src={machine.imagePath}
+              src={detail ? machine.imagePath : thumbnailPath}
               alt={machine.alt}
-              width="640"
-              height="640"
+              width={detail ? 1200 : 600}
+              height={detail ? 1200 : 600}
               loading="lazy"
               decoding="async"
-              className={`machine-image h-auto w-full object-contain ${detail ? 'max-h-96' : 'max-h-56'}`}
+              className={`h-auto w-full object-contain ${detail ? 'max-h-96' : 'max-h-56'}`}
             />
             <Button
               variant="secondary"
@@ -54,15 +55,18 @@ export function MachineImagePanel({
           className="image-lightbox"
           footer={<Button onClick={() => setExpanded(false)}>Close image</Button>}
         >
-          <div className="flex min-h-96 items-center justify-center overflow-hidden rounded-md bg-sunken p-4 sm:p-8">
-            <img
-              src={machine.imagePath}
-              alt={machine.alt}
-              width="640"
-              height="640"
-              className="machine-image max-h-(--container-image-max-height) w-full object-contain"
-            />
-          </div>
+          {expanded ? (
+            <div className="flex min-h-96 items-center justify-center overflow-hidden rounded-md bg-sunken p-4 sm:p-8">
+              <img
+                src={machine.imagePath}
+                alt={machine.alt}
+                width="1200"
+                height="1200"
+                decoding="async"
+                className="max-h-(--container-image-max-height) w-full object-contain"
+              />
+            </div>
+          ) : null}
         </Dialog>
       ) : null}
     </>

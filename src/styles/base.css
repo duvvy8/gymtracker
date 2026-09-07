@@ -117,11 +117,6 @@
     animation: image-lightbox-in var(--duration-fast) var(--ease-standard);
   }
 
-  .machine-image {
-    transform: scale(var(--scale-machine-image));
-    transform-origin: center;
-  }
-
   @keyframes image-lightbox-in {
     from {
       opacity: 0;

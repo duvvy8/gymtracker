@@ -20,17 +20,32 @@ assert.equal(
 );
 assert.equal(EXERCISES.length >= 22, true);
 
+function assertLosslessWebp(imageFile, label, expectedSize) {
+  const webp = readFileSync(imageFile);
+  assert.equal(webp.subarray(0, 4).toString('ascii'), 'RIFF', `${label} is not WebP`);
+  assert.equal(webp.subarray(8, 12).toString('ascii'), 'WEBP', `${label} is not WebP`);
+  assert.equal(webp.subarray(12, 16).toString('ascii'), 'VP8L', `${label} must be lossless WebP`);
+  assert.equal(webp[20], 0x2f, `${label} has an invalid lossless WebP header`);
+  const sizeBits = webp.readUInt32LE(21);
+  const width = (sizeBits & 0x3fff) + 1;
+  const height = ((sizeBits >>> 14) & 0x3fff) + 1;
+  const hasAlpha = (sizeBits >>> 28) & 1;
+  assert.equal(width, expectedSize, `${label} image width changed`);
+  assert.equal(height, expectedSize, `${label} image height changed`);
+  assert.equal(hasAlpha, 1, `${label} must retain transparency`);
+}
+
 for (const machine of MACHINES) {
   assert.ok(machine.imagePath, `${machine.id} has no image path`);
   const imageFile = resolve('public', machine.imagePath.slice(1));
   assert.ok(existsSync(imageFile), `${machine.id} image is missing`);
-  const png = readFileSync(imageFile);
-  assert.equal(png.subarray(1, 4).toString('ascii'), 'PNG', `${machine.id} is not a PNG`);
-  assert.equal(png.readUInt32BE(16), 640, `${machine.id} image width changed`);
-  assert.equal(png.readUInt32BE(20), 640, `${machine.id} image height changed`);
-  assert.equal(png[25], 6, `${machine.id} PNG must retain an alpha channel`);
+  assertLosslessWebp(imageFile, machine.id, 1200);
+
+  const thumbnailFile = imageFile.replace(/\.webp$/, '-600.webp');
+  assert.ok(existsSync(thumbnailFile), `${machine.id} thumbnail is missing`);
+  assertLosslessWebp(thumbnailFile, `${machine.id} thumbnail`, 600);
 }
-assert.equal(existsSync(resolve('public/machines/G3-S52.png')), false);
+assert.equal(existsSync(resolve('public/machines/G3-S52.webp')), false);
 
 assert.equal(resolveExerciseAlias('machine chest press', 'machine')?.machineIds[0], 'G3-S10');
 assert.equal(resolveExerciseAlias('lying leg curl', 'machine')?.machineIds[0], 'G3-S73');
@@ -91,5 +106,5 @@ assert.equal(v2.ok, true);
 if (v2.ok) assert.deepEqual(v2.value.workoutPlans, [storedPlan]);
 
 console.log(
-  `Workout checks passed: ${MACHINES.length} transparent machine images, ${EXERCISES.length} exercises, mappings, planner, schemas, and backup compatibility.`,
+  `Workout checks passed: ${MACHINES.length} lossless high-resolution machine images, ${EXERCISES.length} exercises, mappings, planner, schemas, and backup compatibility.`,
 );

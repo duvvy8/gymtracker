@@ -12,7 +12,7 @@ function machine(
   return {
     id,
     displayName,
-    imagePath: `/machines/${id}.png`,
+    imagePath: `/machines/${id}.webp`,
     region,
     aliases,
     exerciseIds,
