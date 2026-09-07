@@ -3,6 +3,7 @@ import type { PlannedExercise } from '../types';
 import { Dialog } from './Dialog';
 import { MachineImagePanel } from './MachineImagePanel';
 import { MuscleEmphasisBars } from './MuscleEmphasisBars';
+import { MuscleHeatmap } from './MuscleHeatmap';
 import { Button } from './ui';
 
 export function ExerciseDetailDialog({
@@ -25,8 +26,8 @@ export function ExerciseDetailDialog({
       footer={<Button onClick={onClose}>Close</Button>}
     >
       {exercise ? (
-        <div className="grid min-w-0 gap-5 md:grid-cols-2">
-          <div className="min-w-0">
+        <div className="grid min-w-0 gap-5 lg:grid-cols-2">
+          <div className="grid min-w-0 content-start gap-5">
             {machine ? (
               <MachineImagePanel machine={machine} detail />
             ) : (
@@ -34,6 +35,12 @@ export function ExerciseDetailDialog({
                 <p className="text-sm font-medium text-ink-3">Image coming soon</p>
               </div>
             )}
+            {machine ? (
+              <section>
+                <h3 className="mb-3 text-base font-semibold">Muscle map</h3>
+                <MuscleHeatmap targets={machine.emphasis} />
+              </section>
+            ) : null}
           </div>
 
           <div className="min-w-0 space-y-5">

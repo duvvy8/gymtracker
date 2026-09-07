@@ -4,6 +4,7 @@ import { exercisesForMachine } from '../data/exercises';
 import type { GymMachine } from '../types';
 import { MachineImagePanel } from '../components/MachineImagePanel';
 import { MuscleEmphasisBars } from '../components/MuscleEmphasisBars';
+import { MuscleHeatmap } from '../components/MuscleHeatmap';
 import { Button, Card, PageHeader } from '../components/ui';
 import { Dialog } from '../components/Dialog';
 
@@ -62,8 +63,14 @@ export function MachinesPage() {
         footer={<Button onClick={() => setSelected(null)}>Close</Button>}
       >
         {selected ? (
-          <div className="grid min-w-0 gap-5 md:grid-cols-2">
-            <MachineImagePanel machine={selected} detail />
+          <div className="grid min-w-0 gap-5 lg:grid-cols-2">
+            <div className="grid min-w-0 content-start gap-5">
+              <MachineImagePanel machine={selected} detail />
+              <section>
+                <h3 className="mb-3 text-base font-semibold">Muscle map</h3>
+                <MuscleHeatmap targets={selected.emphasis} />
+              </section>
+            </div>
             <section>
               <h3 className="text-base font-semibold">Muscle emphasis</h3>
               <p className="mt-1 text-sm text-ink-3">

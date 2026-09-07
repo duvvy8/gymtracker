@@ -1,0 +1,51 @@
+{
+  "assets": [
+    {
+      "file": "01_upper_front_neck_crop.png",
+      "view": "upperFront",
+      "approved": true
+    },
+    {
+      "file": "02_upper_back_neck_crop.png",
+      "view": "upperBack",
+      "approved": true
+    },
+    {
+      "file": "03_lower_front_modest.png",
+      "view": "lowerFront",
+      "approved": true
+    },
+    {
+      "file": "04_lower_back_modest.png",
+      "view": "lowerBack",
+      "approved": true
+    }
+  ],
+  "heatmapScale": [
+    {
+      "min": 0,
+      "max": 0,
+      "category": "none"
+    },
+    {
+      "min": 1,
+      "max": 15,
+      "category": "green"
+    },
+    {
+      "min": 16,
+      "max": 35,
+      "category": "yellow"
+    },
+    {
+      "min": 36,
+      "max": 60,
+      "category": "orange"
+    },
+    {
+      "min": 61,
+      "max": 100,
+      "category": "red"
+    }
+  ]
+}
