@@ -120,7 +120,10 @@
   /* ---- Layout constants ---- */
   --container-measure: 46rem;
   --container-wide: 72rem;
-  --container-image-max-height: 70dvh;
+  /* The lightbox image shares the viewport with the dialog header, footer and
+     padding, so the cap subtracts that chrome on a short screen rather than
+     letting a 70dvh image push the dialog body into a scroll. */
+  --container-image-max-height: min(70dvh, calc(100dvh - 14rem));
 }
 
 /* Layout constant shared between the tab bar and the padding utility

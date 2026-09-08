@@ -56,14 +56,14 @@ export function MachineImagePanel({
           footer={<Button onClick={() => setExpanded(false)}>Close image</Button>}
         >
           {expanded ? (
-            <div className="flex min-h-96 items-center justify-center overflow-hidden rounded-md bg-sunken p-4 sm:p-8">
+            <div className="flex min-h-48 items-center justify-center overflow-hidden rounded-md bg-sunken p-4 sm:min-h-96 sm:p-8">
               <img
                 src={machine.imagePath}
                 alt={machine.alt}
                 width="1200"
                 height="1200"
                 decoding="async"
-                className="max-h-(--container-image-max-height) w-full object-contain"
+                className="h-auto max-h-(--container-image-max-height) w-full object-contain"
               />
             </div>
           ) : null}

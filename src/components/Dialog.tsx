@@ -83,7 +83,16 @@ export function Dialog({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">{children}</div>
+      {/*
+        flex-auto, not flex-1. The dialog is a column flex container with an
+        auto height, so its own height comes from the intrinsic contribution of
+        its children. WebKit resolves a `flex-basis: 0%` child against that
+        indefinite height as zero, which collapsed the body to its padding on
+        iOS Safari while Chrome sized it from the content. `flex: 1 1 auto`
+        keeps the body's content in the measurement, and min-h-0 still lets it
+        shrink and scroll once max-height clamps the dialog.
+      */}
+      <div className="min-h-0 flex-auto overflow-y-auto px-4 py-4 sm:px-5">{children}</div>
 
       {footer ? (
         <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-line px-4 py-3 sm:px-5">
