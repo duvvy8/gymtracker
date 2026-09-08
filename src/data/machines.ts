@@ -8,6 +8,7 @@ function machine(
   exerciseIds: readonly string[],
   emphasis: GymMachine['emphasis'],
   alt: string,
+  emphasisExample?: string,
 ): GymMachine {
   return {
     id,
@@ -18,6 +19,7 @@ function machine(
     exerciseIds,
     emphasis,
     alt,
+    emphasisExample,
     enabled: true,
     alternatives: [],
   };
@@ -249,6 +251,35 @@ export const MACHINES = [
     ],
     'Hip abductor machine with outward-moving thigh pads and a weight stack',
   ),
+  machine(
+    'G3-MSFT300',
+    'Functional Trainer',
+    'Multi-purpose',
+    ['functional trainer', 'dual adjustable pulley'],
+    ['functional-trainer-chest-press'],
+    [
+      { muscle: 'Chest', percent: 55, role: 'primary' },
+      { muscle: 'Triceps', percent: 25, role: 'secondary' },
+      { muscle: 'Front delts', percent: 20, role: 'secondary' },
+    ],
+    'Matrix Aura functional trainer with two adjustable cable pulleys and overhead pull-up grips',
+    'Standing cable chest press',
+  ),
+  machine(
+    'G3-MS24',
+    'Adjustable Pulley',
+    'Multi-purpose',
+    ['adjustable pulley', 'single cable station'],
+    ['single-arm-cable-row'],
+    [
+      { muscle: 'Lats', percent: 40, role: 'primary' },
+      { muscle: 'Mid back', percent: 30, role: 'primary' },
+      { muscle: 'Biceps', percent: 20, role: 'secondary' },
+      { muscle: 'Rear delts', percent: 10, role: 'secondary' },
+    ],
+    'Matrix Aura adjustable pulley with a single height-adjustable cable station and weight stack',
+    'Single-arm cable row',
+  ),
 ] as const satisfies readonly GymMachine[];
 
 export const MACHINE_REGIONS: readonly MachineRegion[] = [
@@ -258,6 +289,7 @@ export const MACHINE_REGIONS: readonly MachineRegion[] = [
   'Arms',
   'Core',
   'Legs',
+  'Multi-purpose',
 ];
 
 export const MACHINE_BY_ID = new Map<MachineId, GymMachine>(
@@ -299,7 +331,7 @@ export function validateMachineRegistry(): string[] {
   }
 
   if (ids.has('G3-S52')) problems.push('Unconfirmed G3-S52 must not be present');
-  if (MACHINES.length !== 16)
-    problems.push(`Expected 16 confirmed machines, found ${MACHINES.length}`);
+  if (MACHINES.length !== 18)
+    problems.push(`Expected 18 confirmed machines, found ${MACHINES.length}`);
   return problems;
 }

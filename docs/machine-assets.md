@@ -1,6 +1,6 @@
 # Machine image sources
 
-The 16 machine images in `public/machines` come from the official Matrix Fitness United States product catalogue. The catalogue identifies every render by its exact Aura model SKU. Each source file is a transparent 1200 by 1200 PNG supplied by Matrix through the Johnson Health Tech asset service.
+The original 16 machine images in `public/machines` come from the official Matrix Fitness United States product catalogue. The catalogue identifies every render by its exact Aura model SKU. Each source file is a transparent 1200 by 1200 PNG supplied by Matrix through the Johnson Health Tech asset service.
 
 The application stores lossless WebP copies locally. This preserves every source pixel while reducing the full-resolution set from 9.1 MB of PNG data to 5.1 MB. Separate 600 by 600 card thumbnails add 1.6 MB and prevent the catalogue from downloading every full-resolution file. No machine image is requested from Matrix when someone uses gymtracker.
 
@@ -26,3 +26,20 @@ The application stores lossless WebP copies locally. This preserves every source
 The G3-S52 back extension is deliberately excluded because it is not confirmed equipment for this gym.
 
 The images remain Matrix Fitness product imagery. This repository uses them only to identify the corresponding gym equipment.
+
+## 2026-09-08: cable stations and compact maps
+
+The catalogue now contains 18 machines. The two additional official UK catalogue
+renders are also transparent 1200 by 1200 PNGs, stored as lossless local WebP with
+600 by 600 thumbnails:
+
+| Model      | Product                                                                                                                        | Official image source                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| G3-MSFT300 | [Aura Functional Trainer, G3-MSFT300/400](https://uk.matrixfitness.com/eng/strength/multi-station/g3-msft3-functional-trainer) | https://assets.jhtbrand.co/files/product/1f43e17ce2167548e0b06a3581e2610b43d9fe4d/ |
+| G3-MS24    | [Aura Adjustable Pulley](https://uk.matrixfitness.com/eng/strength/multi-station/adjustable-pulley)                            | https://assets.jhtbrand.co/files/product/17182a1a18eaaf9ad84baeeda5ba6cae1217a7d9/ |
+
+The functional trainer uses a stable G3-MSFT300 catalogue id for the linked
+300/400 family; the gym's stack variant has not been confirmed. No stack weight
+is claimed in the app. Both stations are grouped as Multi-purpose. Their maps
+and bars explicitly describe an example movement, not every exercise possible
+on the station. Percentages are editorial planning estimates, not Matrix data.

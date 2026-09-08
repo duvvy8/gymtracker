@@ -24,7 +24,7 @@ lifted or exercise history.
 | Log food | Search your saved foods by name or brand, scan a barcode, or add something new by hand.                                                                                                            |
 | History  | Daily calories against your target, macros stacked in grams, and the body weight trend, over 7 days, 30 days or 13 weeks.                                                                          |
 | Programs | Create, review, edit and delete reusable workout programs. Manual and local rules-based creation use the same editable result.                                                                     |
-| Machines | Browse the 16 confirmed gym machines by body region, with local reference images, exercise guidance and approximate muscle emphasis.                                                               |
+| Machines | Browse the 18 confirmed gym machines by body region, with local reference images, exercise guidance and approximate muscle emphasis.                                                               |
 | Settings | Daily targets, body weight entry, export, import, and delete everything.                                                                                                                           |
 | Privacy  | What is stored, where, and the one thing that leaves the device.                                                                                                                                   |
 
@@ -182,7 +182,7 @@ unchanged. Version 1 backups remain importable and are normalized to an empty pr
 
 ### Workout planner and machine catalogue
 
-`src/data/machines.ts` is the source of truth for the 16 confirmed Matrix Aura machines. It holds
+`src/data/machines.ts` is the source of truth for the 18 confirmed Matrix Aura machines. It holds
 stable model IDs, plain display names, aliases, body-region grouping, exercise mappings and rounded
 muscle-emphasis distributions. G3-S52 is deliberately absent because that machine is not confirmed
 at this gym. `src/data/exercises.ts` keeps machine, bodyweight, dumbbell and barbell movements
@@ -193,8 +193,8 @@ uses the `WorkoutPlanGenerator` interface in `src/lib/planner.ts`. The current i
 deterministic local rules engine and never claims to use AI. A future provider can implement the
 same interface without changing the editor or stored plan shape.
 
-The machine images are local transparent PNGs extracted from the official 2025 Matrix Fitness
-strength catalogue. Their source and exact handling are documented in `docs/machine-assets.md`.
+The machine images are local lossless WebP copies of transparent renders from the Matrix Fitness
+product catalogue. Their source and exact handling are documented in `docs/machine-assets.md`.
 No image is hotlinked at runtime.
 
 ### State

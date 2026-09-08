@@ -52,13 +52,15 @@
   /* Muscle heatmap. The whole figure is filled with the muscle base tone, so
      an untrained muscle reads as part of the body instead of as empty paper.
      Trained muscles are painted along one warm ramp from soft to strong, and
-     the emphasis percentage picks the point on that ramp: a small share stays
-     near the base tone and a dominant share reaches full strength. The labels
-     and percentage bars remain visible beside the map, so colour reinforces
-     emphasis rather than carrying it alone. */
-  --color-muscle-base: #dcd8cf;
-  --color-heat-soft: #f3e1cf;
-  --color-heat-strong: #a63c17;
+     even a small share has a visible warm tint, while the high end stays a
+     bright vermilion rather than a dark brown. The ramp travels in lightness
+     and in saturation together, so neighbouring shares stay far enough apart
+     to tell one muscle from another. The labels and percentage bars remain
+     visible beside the map, so colour reinforces emphasis rather than
+     carrying it alone. */
+  --color-muscle-base: #e4e6e3;
+  --color-heat-soft: #fcdba8;
+  --color-heat-strong: #e8552c;
 
   /* Status */
   --color-danger: #a32b22;

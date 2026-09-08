@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode, type SyntheticEvent } from 'react';
 import { IconClose } from './icons';
 import { Button } from './ui';
 
@@ -62,7 +62,10 @@ export function Dialog({
    * effect above, after the parent already set open to false) also fires
    * `close`, and the parent does not need telling about a close it initiated.
    */
-  function handleNativeClose() {
+  function handleNativeClose(event: SyntheticEvent<HTMLDialogElement>) {
+    // React also delivers a nested image dialog's close event to its parent.
+    // Closing that image must leave the machine/exercise details open.
+    if (event.target !== event.currentTarget) return;
     if (openRef.current) onClose();
   }
 
@@ -85,7 +88,9 @@ export function Dialog({
         </Button>
       </div>
 
-      <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+      {/* Use the content's natural height as the flex basis. A zero basis can
+          collapse this area in Safari when the dialog has only a max-height. */}
+      <div ref={bodyRef} className="min-h-0 flex-auto overflow-y-auto px-4 py-4 sm:px-5">
         {children}
       </div>
 

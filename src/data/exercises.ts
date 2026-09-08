@@ -22,6 +22,32 @@ const machineExercise = (
 
 export const EXERCISES = [
   machineExercise(
+    'functional-trainer-chest-press',
+    'Standing Cable Chest Press',
+    'G3-MSFT300',
+    ['Chest'],
+    ['Triceps', 'Front delts'],
+    'Set both pulleys around chest height, attach handles and take a staggered stance facing away from the stacks.',
+    [
+      'Brace your trunk and keep a comfortable bend in your elbows.',
+      'Press the handles forward without leaning or twisting.',
+      'Return slowly, keeping the movement within a comfortable range.',
+    ],
+  ),
+  machineExercise(
+    'single-arm-cable-row',
+    'Single-arm Cable Row',
+    'G3-MS24',
+    ['Lats', 'Mid back'],
+    ['Biceps', 'Rear delts'],
+    'Attach a handle around waist height and face the pulley in a stable staggered stance.',
+    [
+      'Keep your trunk steady and your shoulder relaxed.',
+      'Draw your elbow back toward your hip without twisting.',
+      'Let your arm extend under control, then repeat on the other side.',
+    ],
+  ),
+  machineExercise(
     'machine-chest-press',
     'Chest Press',
     'G3-S10',

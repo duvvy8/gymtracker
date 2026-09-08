@@ -25,15 +25,17 @@ export interface HeatmapModel {
 /**
  * The map paints the whole figure in the muscle base tone and then paints the
  * trained muscles along a single warm ramp. `heatMixForPercent` returns how
- * far along that ramp a percentage sits, so a small share stays close to the
- * base tone and a dominant share reaches full strength. Zero emphasis is left
- * at the base tone.
+ * far along that ramp a percentage sits. Every positive share starts at a
+ * visible apricot tint, separate from the neutral base. The high end is bright
+ * vermilion, not dark brown. Zero emphasis is left at the base tone.
  *
- * The curve keeps the low end restrained and lets the top of the scale pull
- * away, so a 20 percent share and a 60 percent share are easy to tell apart at
- * a glance instead of sitting in the same mid tone.
+ * Catalogue emphasis clusters between 5 and 30 percent, so a linear ramp would
+ * leave most muscles crowded into the pale end of the colour range and hard to
+ * tell apart. The curve below opens the low end out while still rising all the
+ * way to the top, so a supporting muscle is legible and a 25 percent share and
+ * a 55 percent share are visibly different.
  */
-const HEAT_CURVE = 1.25;
+const HEAT_CURVE = 0.8;
 
 export function heatMixForPercent(percent: number): number {
   if (percent <= 0) return 0;

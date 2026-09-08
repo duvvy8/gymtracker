@@ -6,7 +6,7 @@ import {
   resolveExerciseAlias,
   validateExerciseRegistry,
 } from '../src/data/exercises.ts';
-import { MACHINES, validateMachineRegistry } from '../src/data/machines.ts';
+import { MACHINES, MACHINE_REGIONS, validateMachineRegistry } from '../src/data/machines.ts';
 import {
   BODY_HEATMAP_REGIONS,
   BODY_SILHOUETTES,
@@ -25,12 +25,20 @@ import { workoutPlanSchema } from '../src/lib/validation.ts';
 
 assert.deepEqual(validateMachineRegistry(), []);
 assert.deepEqual(validateExerciseRegistry(), []);
-assert.equal(MACHINES.length, 16);
+assert.equal(MACHINES.length, 18);
 assert.equal(
   MACHINES.some((machine) => machine.id === 'G3-S52'),
   false,
 );
 assert.equal(EXERCISES.length >= 22, true);
+
+for (const id of ['G3-MSFT300', 'G3-MS24']) {
+  const cableMachine = MACHINES.find((entry) => entry.id === id);
+  assert.ok(cableMachine?.emphasisExample, `${id} must label its example movement`);
+  assert.equal(cableMachine.region, 'Multi-purpose');
+  const example = EXERCISES.find((entry) => entry.id === cableMachine.exerciseIds[0]);
+  assert.ok(example?.machineIds.includes(id), `${id} example must map back to the station`);
+}
 
 // One colour carries the whole scale, so the only thing that has to hold is
 // that no emphasis draws nothing and that a larger share is always stronger.
@@ -190,6 +198,16 @@ assert.equal(
   true,
 );
 assert.equal(workoutPlanSchema.safeParse({ ...first, createdAt: 1, updatedAt: 1 }).success, true);
+assert.equal(
+  workoutPlanSchema.safeParse({
+    ...first,
+    priorityRegions: [...MACHINE_REGIONS],
+    createdAt: 1,
+    updatedAt: 1,
+  }).success,
+  true,
+  'all catalogue groups and machines must fit in a saved program',
+);
 
 const v1 = parseBackup(
   JSON.stringify({

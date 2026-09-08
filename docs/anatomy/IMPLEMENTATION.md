@@ -38,3 +38,65 @@ muscle group from 0 to 100 and colours a body map from it, MuscleSquad draws
 frequently trained muscles darker and neglected ones lighter, and the MuscleMap
 SDK fills unhighlighted muscles with a default tone and interpolates a colour
 scale for the highlighted ones.
+
+## Presentation refinement, 2026-09-08
+
+Every machine card now includes a compact map beside View machine. It uses the
+same model, views, paths, colour functions and source percentages as the detail
+map. The full map groups the figures on one quiet surface with a compact key,
+without a border around each figure. Two views stay side by side on phones.
+
+SVG image elements now place the unchanged source PNG and the fills inside one
+coordinate system. A presentation viewBox frames the upper and lower anatomy
+more closely, removing excess canvas whitespace without modifying source assets
+or traced geometry. The source hashes remain pinned by check:workouts.
+
+COMPLETED.md and CHECKLIST.md were read as historical evidence of Claude's
+alignment work. Its geometry and colour decisions are retained. PROJECT-SUMMARY.md
+contains older scope and release status; current user requests and AGENTS.md govern
+new features and publishing. No outstanding work is claimed by Claude in UPCOMING.md.
+
+## Colour readability refinement, 2026-09-08
+
+Reviewed [MuscleWiki's bodymap legend](https://api.musclewiki.com/documentation)
+and [StrengthLog's muscle-map example](https://help.strengthlog.com/help-article/the-home-screen/).
+MuscleWiki explicitly separates secondary and tertiary work with warm colours;
+StrengthLog's example uses visible pink/red highlights against neutral anatomy.
+Only their presentation principles are used; no external artwork is copied.
+Fitbod's recovery percentages were also reviewed, but are a different metric
+from this catalogue's estimated per-exercise emphasis.
+
+The previous near-neutral low end and dark brown high end are superseded by
+neutral grey for unshown regions, visible apricot for low positive values and a
+bright vermilion at the top. The continuous scale and shared percentage data
+remain intact. Legend samples label 0, 5, 40 and 90 percent; these are
+reference colours, not threshold bands.
+
+## Ramp separation, 2026-09-08
+
+A first attempt at the brighter scale ran from `#efb16c` to `#e97860` on a
+linear interpolation. Both ends read well on their own, but the whole ramp
+covered an OKLab distance of 0.135 while the step from the neutral body tone to
+the lowest heat colour was 0.167 by itself. In other words, "worked at all" was
+a larger visual jump than "5 percent versus 100 percent", and a 25-percent
+muscle was indistinguishable from a 55-percent one on screen.
+
+The shipped ramp runs from `#fcdba8` to `#e8552c`, an OKLab distance of 0.302,
+travelling in lightness and saturation together rather than in hue alone.
+Catalogue emphasis clusters between 5 and 30 percent, so `HEAT_CURVE` is 0.8:
+the curve opens the low end out instead of crowding the common values into the
+palest part of the range. Reference points, with distance measured from the
+`#e4e6e3` body tone:
+
+| Emphasis | Fill      | Relative luminance | OKLab distance from the body tone |
+| -------- | --------- | ------------------ | --------------------------------- |
+| 5%       | `#fcd09d` | 0.682              | 0.089                             |
+| 25%      | `#f9b181` | 0.532              | 0.148                             |
+| 55%      | `#f48c5e` | 0.388              | 0.228                             |
+| 90%      | `#eb6238` | 0.267              | 0.316                             |
+
+The 90-percent colour's relative luminance is 0.267, against 0.156 for the
+dark brown it replaces. The low-end tint is deliberately distinct from the
+neutral anatomy. These checks address visibility, not a claim of WCAG
+compliance for individual heat colours; text labels and percentage bars remain
+available alongside the colour encoding.

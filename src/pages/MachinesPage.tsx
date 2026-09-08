@@ -38,11 +38,16 @@ export function MachinesPage() {
                     <MachineImagePanel machine={machine} />
                     <div className="flex flex-1 flex-col pt-4">
                       <h3 className="text-lg font-semibold">{machine.displayName}</h3>
-                      <p className="mt-1 text-xs text-ink-3">Approximate muscle emphasis</p>
+                      <p className="mt-1 text-xs text-ink-3">
+                        {machine.emphasisExample
+                          ? `Example: ${machine.emphasisExample}`
+                          : 'Approximate muscle emphasis'}
+                      </p>
                       <div className="mt-3">
                         <MuscleEmphasisBars items={machine.emphasis.slice(0, 3)} />
                       </div>
-                      <div className="mt-4 flex justify-end">
+                      <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                        <MuscleHeatmap targets={machine.emphasis} compact />
                         <Button onClick={() => setSelected(machine)}>View machine</Button>
                       </div>
                     </div>
@@ -68,13 +73,18 @@ export function MachinesPage() {
               <MachineImagePanel machine={selected} detail />
               <section>
                 <h3 className="mb-3 text-base font-semibold">Muscle map</h3>
+                {selected.emphasisExample ? (
+                  <p className="mb-3 text-xs text-ink-3">Example: {selected.emphasisExample}</p>
+                ) : null}
                 <MuscleHeatmap targets={selected.emphasis} />
               </section>
             </div>
             <section>
               <h3 className="text-base font-semibold">Muscle emphasis</h3>
               <p className="mt-1 text-sm text-ink-3">
-                Rounded planning estimates, not biomechanical measurements.
+                {selected.emphasisExample
+                  ? `Shown for ${selected.emphasisExample.toLowerCase()}. This station supports many exercises; muscle emphasis changes with the movement and pulley setup. Percentages are approximate planning estimates.`
+                  : 'Rounded planning estimates, not biomechanical measurements.'}
               </p>
               <div className="mt-4">
                 <MuscleEmphasisBars items={selected.emphasis} />

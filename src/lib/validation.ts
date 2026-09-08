@@ -222,9 +222,19 @@ export const machineIdSchema = z.enum([
   'G3-S73',
   'G3-S74',
   'G3-S75',
+  'G3-MSFT300',
+  'G3-MS24',
 ]);
 
-export const machineRegionSchema = z.enum(['Chest', 'Back', 'Shoulders', 'Arms', 'Core', 'Legs']);
+export const machineRegionSchema = z.enum([
+  'Chest',
+  'Back',
+  'Shoulders',
+  'Arms',
+  'Core',
+  'Legs',
+  'Multi-purpose',
+]);
 export const workoutGoalSchema = z.enum(['general', 'muscle', 'strength', 'endurance']);
 export const experienceLevelSchema = z.enum(['beginner', 'intermediate', 'advanced']);
 export const weekdaySchema = z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
@@ -269,8 +279,8 @@ export const workoutPlanSchema = z.object({
   goal: workoutGoalSchema,
   experience: experienceLevelSchema,
   sessionMinutes: finiteNumber.int().min(LIMITS.sessionMinutesMin).max(LIMITS.sessionMinutesMax),
-  priorityRegions: z.array(machineRegionSchema).max(6),
-  availableMachineIds: z.array(machineIdSchema).max(16),
+  priorityRegions: z.array(machineRegionSchema).max(machineRegionSchema.options.length),
+  availableMachineIds: z.array(machineIdSchema).max(machineIdSchema.options.length),
   days: z.array(workoutDaySchema).min(1).max(LIMITS.workoutDaysMax),
   createdAt: finiteNumber.int().nonnegative(),
   updatedAt: finiteNumber.int().nonnegative(),

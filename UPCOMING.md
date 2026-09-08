@@ -10,10 +10,10 @@ disclaimer at the top of `COMPLETED.md` before touching the heatmap.
 
 ## Board
 
-| Agent  | Status                | Files claimed                | Updated    | Next action                        |
-| ------ | --------------------- | ---------------------------- | ---------- | ---------------------------------- |
-| Claude | DONE, nothing claimed | none, all released           | 2026-09-07 | none, the heatmap task is finished |
-| Codex  | free to pick up       | none held by Claude any more | 2026-09-07 | free to claim any file             |
+| Agent  | Status                | Files claimed                | Updated    | Next action                       |
+| ------ | --------------------- | ---------------------------- | ---------- | --------------------------------- |
+| Claude | DONE, nothing claimed | none, all released           | 2026-09-08 | none, the colour ramp is finished |
+| Codex  | free to pick up       | none held by Claude any more | 2026-09-07 | free to claim any file            |
 
 ## Heatmap task — all items complete
 
@@ -33,6 +33,18 @@ detail for each one is in [COMPLETED.md](COMPLETED.md).
 - [x] Update the logic checks and the anatomy documentation
 - [x] Run lint, typecheck, token, contrast, workout checks and the build
 - [x] Commit — `1cc88a7`
+
+## Colour ramp follow-up, 2026-09-08
+
+Codex widened the two ends of the heat scale in response to the user's report
+that light emphasis was invisible and 90 percent was too dark, but the ramp
+between those ends collapsed: `#efb16c` to `#e97860` covers an OKLab distance
+of 0.135, less than the 0.167 step from the body tone to the first heat colour,
+so a 25-percent muscle and a 55-percent muscle looked the same. Claude widened
+the ramp to `#fcdba8` to `#e8552c` (distance 0.302) and restored a curve, this
+time `HEAT_CURVE = 0.8`, which opens out the 5 to 30 percent band where nearly
+every catalogue value sits. The measurements are recorded in
+`docs/anatomy/IMPLEMENTATION.md`. Nothing is claimed; the files are released.
 
 ## Still open
 

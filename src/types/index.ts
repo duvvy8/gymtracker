@@ -104,9 +104,12 @@ export type MachineId =
   | 'G3-S72'
   | 'G3-S73'
   | 'G3-S74'
-  | 'G3-S75';
+  | 'G3-S75'
+  | 'G3-MSFT300'
+  | 'G3-MS24';
 
-export type MachineRegion = 'Chest' | 'Back' | 'Shoulders' | 'Arms' | 'Core' | 'Legs';
+export type MachineRegion =
+  'Chest' | 'Back' | 'Shoulders' | 'Arms' | 'Core' | 'Legs' | 'Multi-purpose';
 
 export interface MuscleEmphasis {
   muscle: string;
@@ -123,6 +126,8 @@ export interface GymMachine {
   exerciseIds: readonly string[];
   region: MachineRegion;
   emphasis: readonly MuscleEmphasis[];
+  /** A named example for equipment whose muscle emphasis varies by exercise. */
+  emphasisExample?: string;
   enabled: boolean;
   /** Reserved for location-specific or equivalent equipment later. */
   alternatives: readonly MachineId[];
