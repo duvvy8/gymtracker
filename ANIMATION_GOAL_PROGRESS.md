@@ -4,15 +4,15 @@
 Last agent: Codex (single primary agent)
 Last updated: 2026-09-11 19:24:33 UTC
 Branch: main
-Latest relevant commit: 52a64c0 (coordination checkpoint); final implementation commit pending
-Working tree status: only this goal source and documentation changes; QA artifacts intentionally ignored
+Latest relevant commit: 8af993b (complete implementation); followed by this documentation checkpoint
+Working tree status: goal changes committed; QA artifacts intentionally ignored
 Dev server: Vite at 127.0.0.1:5173, session 72015; built-site preview at 127.0.0.1:4173, session 54619
 Production URL: https://gymtracker.kucera.uk
 Local URL: http://localhost:5173
-Current phase: implementation and live publication complete; final Git checkpoint
-Current files being modified: final documentation only; source changes complete (including AppShell), .gitignore excludes local QA evidence, AI_COORDINATION.md records the browser override
+Current phase: complete
+Current files being modified: none
 Last completed task: publication succeeded; 11 live checks passed and live mobile screenshot inspected
-Exact next task: record the implementation commit in this tracked handoff. No implementation or validation work remains.
+Exact next task: none; all requested implementation, validation, publication and handoff work is complete.
 Known blockers: none. User now prohibits visible-browser control; remaining QA uses isolated headless Chrome.
 Known visual issues: none remaining in the tested states
 
@@ -144,7 +144,7 @@ Every implementation checkbox requires applicable browser/automated validation, 
 - [x] Final visible browser review after regression; record remaining limitations honestly.
   - Strict motion and source review recorded below; all substantive findings fixed. Final screenshot review follows the user-approved headless workflow.
 - [x] Publish completed validated changes using npm run publish:site; verify live home and affected routes/assets.
-- [ ] Update all checkboxes/session state, exact continuation if anything remains, files/tests/screenshots and relevant commit information; keep handoff tracked.
+- [x] Update all checkboxes/session state, exact continuation if anything remains, files/tests/screenshots and relevant commit information; keep handoff tracked.
 
 ## Checkpoint log
 - 2026-09-11: Initial clean checkout verified. No source implementation yet. No sub-agents used. Full pasted brief read; this file is the durable continuation plan.
@@ -211,3 +211,4 @@ Visible localhost profile note: the earlier visible regression created a test fo
 `npm run publish:site` passed all required checks and deployed the existing Worker/custom domain https://gymtracker.kucera.uk. Version: `69320967-76ca-43e6-b313-b7649c091498`. Live headless Chrome passed 11 checks: seven routes returned 200 and loaded the exact deployed CSS `index-B1sCM1uv.css` with 120ms content motion; drawer timing and inert closing, nested-image Escape handling, reduced motion, and zero console/runtime errors. The live 390px screenshot was inspected and matches the established design. Evidence: `.animation-evidence/live-report.json`, `live-qa.cjs`, `live-390.png` (local ignored files).
 
 All implementation changes are confined to the motion architecture and supporting coordination/QA documentation. No dependencies, storage schema, production target, anatomy assets or unrelated staged work changed. Source diff review and `git diff --check` passed. No push: local main includes pre-existing unpublished history; the handoff remains tracked locally, not on origin.
+
