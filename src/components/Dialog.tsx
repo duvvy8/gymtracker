@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode, type SyntheticEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { IconClose } from './icons';
 import { Button } from './ui';
 
@@ -19,6 +19,7 @@ export function Dialog({
   footer,
   size = 'default',
   className = '',
+  retainOnClose = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -28,11 +29,20 @@ export function Dialog({
   footer?: ReactNode;
   size?: 'default' | 'wide';
   className?: string;
+  /** Static reference content only; live forms/resources must follow props. */
+  retainOnClose?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(open);
   const titleId = useId();
+  const [lastContent, setLastContent] = useState({ title, description, children, footer });
+  // Callers often clear their selection on close. Keep the last open content
+  // intact while CSS finishes the native dialog's visual exit.
+  useEffect(() => {
+    if (open && retainOnClose) setLastContent({ title, description, children, footer });
+  }, [open, retainOnClose, title, description, children, footer]);
+  const content = !open && retainOnClose ? lastContent : { title, description, children, footer };
 
   openRef.current = open;
 
@@ -41,6 +51,7 @@ export function Dialog({
     if (!element) return;
 
     if (open && !element.open) {
+      element.inert = false;
       if (bodyRef.current) bodyRef.current.scrollTop = 0;
       element.showModal();
 
@@ -51,6 +62,7 @@ export function Dialog({
     }
 
     if (!open && element.open) element.close();
+    if (!open) element.inert = true;
   }, [open]);
 
   /**
@@ -66,6 +78,8 @@ export function Dialog({
     // React also delivers a nested image dialog's close event to its parent.
     // Closing that image must leave the machine/exercise details open.
     if (event.target !== event.currentTarget) return;
+    if (event.currentTarget.open) return;
+    event.currentTarget.inert = true;
     if (openRef.current) onClose();
   }
 
@@ -79,11 +93,13 @@ export function Dialog({
       <div className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
         <div className="min-w-0">
           <h2 id={titleId} className="text-lg font-semibold">
-            {title}
+            {content.title}
           </h2>
-          {description ? <p className="mt-1 text-sm text-ink-3">{description}</p> : null}
+          {content.description ? (
+            <p className="mt-1 text-sm text-ink-3">{content.description}</p>
+          ) : null}
         </div>
-        <Button variant="quiet" size="icon" onClick={onClose} aria-label={`Close ${title}`}>
+        <Button variant="quiet" size="icon" onClick={onClose} aria-label={`Close ${content.title}`}>
           <IconClose />
         </Button>
       </div>
@@ -91,12 +107,12 @@ export function Dialog({
       {/* Use the content's natural height as the flex basis. A zero basis can
           collapse this area in Safari when the dialog has only a max-height. */}
       <div ref={bodyRef} className="min-h-0 flex-auto overflow-y-auto px-4 py-4 sm:px-5">
-        {children}
+        {content.children}
       </div>
 
-      {footer ? (
+      {content.footer ? (
         <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-line px-4 py-3 sm:px-5">
-          {footer}
+          {content.footer}
         </div>
       ) : null}
     </dialog>

@@ -45,5 +45,8 @@ pnpm-debug.log*
 .vite/
 coverage/
 
+# Local animation QA screenshots, reports and isolated-browser drivers
+.animation-evidence/
+
 # Wrangler local state
 .wrangler/

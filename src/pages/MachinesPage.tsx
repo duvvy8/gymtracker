@@ -60,6 +60,7 @@ export function MachinesPage() {
       </div>
 
       <Dialog
+        retainOnClose
         open={selected !== null}
         onClose={() => setSelected(null)}
         title={selected?.displayName ?? 'Machine'}

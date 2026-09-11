@@ -13,6 +13,8 @@ Read `AGENTS.md`, this file, `ANIMATION_GOAL_PROGRESS.md`, and `UPCOMING.md` bef
 
 ## Browser requirement
 
+**User override, 2026-09-11:** The user is working on the main screen and explicitly requested no further control of their browser. Use a separate headless browser with an isolated temporary profile for remaining validation. Do not activate, resize, type into, or otherwise operate the user's visible Chrome, cursor, or windows. Earlier visible left-monitor evidence remains valid. This newer preference overrides the visible-browser requirement below until the user changes it.
+
 For UI, animation, responsive or visual work: **Use the visible Google Chrome browser on the LEFT / SECOND monitor.** Keep it there unless a genuine technical reason prevents it. The user has the ChatGPT browser extension in this Chrome environment.
 
 Use this visible instance for inspection, interactions, transitions, debugging, console checks where available, responsive layouts, menus/dialogs, keyboard checks and screenshots. Automated checks supplement rather than replace visible testing. Prefer app-scoped/browser input without moving the physical cursor. Use actual window resizing for mobile-sized checks.

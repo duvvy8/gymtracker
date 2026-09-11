@@ -47,6 +47,7 @@ export function MachineImagePanel({
 
       {machine.imagePath ? (
         <Dialog
+          retainOnClose
           open={expanded}
           onClose={() => setExpanded(false)}
           title={machine.displayName}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MACHINE_REGIONS, MACHINES } from '../data/machines';
 import { deleteWorkoutPlan, saveWorkoutPlan, type WorkoutPlanDraft } from '../db/queries';
 import { LIMITS } from '../lib/limits';
@@ -119,6 +119,15 @@ export function ProgramBuilder({
   onNotice: (message: string, tone?: 'info' | 'error') => void;
 }) {
   const [stage, setStage] = useState<Stage>(existing ? 'edit' : 'setup');
+  const stageRef = useRef<HTMLDivElement>(null);
+  const previousStage = useRef(stage);
+  useEffect(() => {
+    if (previousStage.current === stage) return;
+    previousStage.current = stage;
+    // The previous step's submit button has unmounted. Continue at the new
+    // step immediately, without replaying motion or focus on field edits.
+    stageRef.current?.focus();
+  }, [stage]);
   const [preferences, setPreferences] = useState<PlannerPreferences>(() =>
     existing ? preferencesFromPlan(existing) : defaultPreferences(),
   );
@@ -319,437 +328,441 @@ export function ProgramBuilder({
         </div>
       ) : null}
 
-      {stage === 'setup' ? (
-        <form
-          className="grid gap-4 md:grid-cols-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setError(undefined);
-            setStage('schedule');
-          }}
-        >
-          <Field label="Program name" className="md:col-span-2">
-            {({ id, describedBy }) => (
-              <TextInput
-                id={id}
-                aria-describedby={describedBy}
-                maxLength={LIMITS.workoutNameMaxLength}
-                value={preferences.name}
-                onChange={(event) => setPreferences({ ...preferences, name: event.target.value })}
-                required
-                autoFocus
-              />
-            )}
-          </Field>
-          <Field label="Main goal">
-            {({ id, describedBy }) => (
-              <Select
-                id={id}
-                aria-describedby={describedBy}
-                value={preferences.goal}
-                onChange={(event) =>
-                  setPreferences({ ...preferences, goal: event.target.value as WorkoutGoal })
-                }
-              >
-                {Object.entries(GOAL_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="Experience">
-            {({ id, describedBy }) => (
-              <Select
-                id={id}
-                aria-describedby={describedBy}
-                value={preferences.experience}
-                onChange={(event) =>
-                  setPreferences({
-                    ...preferences,
-                    experience: event.target.value as ExperienceLevel,
-                  })
-                }
-              >
-                {Object.entries(EXPERIENCE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="Session duration" hint="Between 15 and 180 minutes">
-            {({ id, describedBy }) => (
-              <NumberInput
-                id={id}
-                aria-describedby={describedBy}
-                value={preferences.sessionMinutes}
-                onChange={(event) => {
-                  const value = integerInput(event.target.value);
-                  if (value !== undefined)
-                    setPreferences({ ...preferences, sessionMinutes: value });
-                }}
-                required
-              />
-            )}
-          </Field>
-          <div className="flex items-end justify-end md:col-span-2">
-            <Button type="submit" variant="primary">
-              Choose schedule
-            </Button>
-          </div>
-        </form>
-      ) : null}
-
-      {stage === 'schedule' ? (
-        <div className="grid gap-6">
-          <fieldset>
-            <legend className="text-sm font-semibold">Training days</legend>
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-              {WEEKDAYS.map((day) => (
-                <label
-                  key={day.id}
-                  className="flex min-h-11 items-center gap-2 rounded-md border border-line-input bg-surface px-3 text-sm"
+      <div key={stage} ref={stageRef} tabIndex={-1} className="motion-content focus:outline-none">
+        {stage === 'setup' ? (
+          <form
+            className="grid gap-4 md:grid-cols-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setError(undefined);
+              setStage('schedule');
+            }}
+          >
+            <Field label="Program name" className="md:col-span-2">
+              {({ id, describedBy }) => (
+                <TextInput
+                  id={id}
+                  aria-describedby={describedBy}
+                  maxLength={LIMITS.workoutNameMaxLength}
+                  value={preferences.name}
+                  onChange={(event) => setPreferences({ ...preferences, name: event.target.value })}
+                  required
+                  autoFocus
+                />
+              )}
+            </Field>
+            <Field label="Main goal">
+              {({ id, describedBy }) => (
+                <Select
+                  id={id}
+                  aria-describedby={describedBy}
+                  value={preferences.goal}
+                  onChange={(event) =>
+                    setPreferences({ ...preferences, goal: event.target.value as WorkoutGoal })
+                  }
                 >
-                  <input
-                    type="checkbox"
-                    checked={preferences.trainingDays.includes(day.id)}
-                    onChange={() => toggleDay(day.id)}
-                  />
-                  {day.short}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend className="text-sm font-semibold">Priority areas</legend>
-            <p className="mt-1 text-xs text-ink-3">
-              Optional. The local draft puts these areas first.
-            </p>
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-              {MACHINE_REGIONS.map((region) => (
-                <label
-                  key={region}
-                  className="flex min-h-11 items-center gap-2 rounded-md border border-line-input bg-surface px-3 text-sm"
+                  {Object.entries(GOAL_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="Experience">
+              {({ id, describedBy }) => (
+                <Select
+                  id={id}
+                  aria-describedby={describedBy}
+                  value={preferences.experience}
+                  onChange={(event) =>
+                    setPreferences({
+                      ...preferences,
+                      experience: event.target.value as ExperienceLevel,
+                    })
+                  }
                 >
-                  <input
-                    type="checkbox"
-                    checked={preferences.priorityRegions.includes(region)}
-                    onChange={() => toggleRegion(region)}
-                  />
-                  {region}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend className="text-sm font-semibold">Available machines</legend>
-            <div className="mt-1 flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-xs text-ink-3">
-                Only selected machines are used in a local draft.
-              </p>
-              <Button
-                size="sm"
-                variant="quiet"
-                onClick={() =>
-                  setPreferences({
-                    ...preferences,
-                    availableMachineIds:
-                      preferences.availableMachineIds.length === MACHINES.length
-                        ? []
-                        : [...ALL_MACHINE_IDS],
-                  })
-                }
-              >
-                {preferences.availableMachineIds.length === MACHINES.length
-                  ? 'Clear all'
-                  : 'Select all'}
+                  {Object.entries(EXPERIENCE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="Session duration" hint="Between 15 and 180 minutes">
+              {({ id, describedBy }) => (
+                <NumberInput
+                  id={id}
+                  aria-describedby={describedBy}
+                  value={preferences.sessionMinutes}
+                  onChange={(event) => {
+                    const value = integerInput(event.target.value);
+                    if (value !== undefined)
+                      setPreferences({ ...preferences, sessionMinutes: value });
+                  }}
+                  required
+                />
+              )}
+            </Field>
+            <div className="flex items-end justify-end md:col-span-2">
+              <Button type="submit" variant="primary">
+                Choose schedule
               </Button>
             </div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {MACHINES.map((machine) => (
-                <label
-                  key={machine.id}
-                  className="flex min-h-11 items-center gap-2 rounded-md border border-line-input bg-surface px-3 text-sm"
+          </form>
+        ) : null}
+
+        {stage === 'schedule' ? (
+          <div className="grid gap-6">
+            <fieldset>
+              <legend className="text-sm font-semibold">Training days</legend>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                {WEEKDAYS.map((day) => (
+                  <label
+                    key={day.id}
+                    className="flex min-h-11 items-center gap-2 rounded-md border border-line-input bg-surface px-3 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={preferences.trainingDays.includes(day.id)}
+                      onChange={() => toggleDay(day.id)}
+                    />
+                    {day.short}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend className="text-sm font-semibold">Priority areas</legend>
+              <p className="mt-1 text-xs text-ink-3">
+                Optional. The local draft puts these areas first.
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                {MACHINE_REGIONS.map((region) => (
+                  <label
+                    key={region}
+                    className="flex min-h-11 items-center gap-2 rounded-md border border-line-input bg-surface px-3 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={preferences.priorityRegions.includes(region)}
+                      onChange={() => toggleRegion(region)}
+                    />
+                    {region}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend className="text-sm font-semibold">Available machines</legend>
+              <div className="mt-1 flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-xs text-ink-3">
+                  Only selected machines are used in a local draft.
+                </p>
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  onClick={() =>
+                    setPreferences({
+                      ...preferences,
+                      availableMachineIds:
+                        preferences.availableMachineIds.length === MACHINES.length
+                          ? []
+                          : [...ALL_MACHINE_IDS],
+                    })
+                  }
                 >
-                  <input
-                    type="checkbox"
-                    checked={preferences.availableMachineIds.includes(machine.id)}
-                    onChange={() => toggleMachine(machine.id)}
-                  />
-                  <span>{machine.displayName}</span>
-                </label>
+                  {preferences.availableMachineIds.length === MACHINES.length
+                    ? 'Clear all'
+                    : 'Select all'}
+                </Button>
+              </div>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {MACHINES.map((machine) => (
+                  <label
+                    key={machine.id}
+                    className="flex min-h-11 items-center gap-2 rounded-md border border-line-input bg-surface px-3 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={preferences.availableMachineIds.includes(machine.id)}
+                      onChange={() => toggleMachine(machine.id)}
+                    />
+                    <span>{machine.displayName}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div className="flex flex-wrap justify-between gap-2">
+              <Button onClick={() => setStage('setup')}>Back</Button>
+              <Button variant="primary" disabled={busy} onClick={() => void createDraft()}>
+                {busy
+                  ? 'Creating draft'
+                  : mode === 'manual'
+                    ? 'Start adding exercises'
+                    : 'Create local draft'}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {stage === 'edit' && draft ? (
+          <div>
+            <div className="flex gap-2 overflow-x-auto pb-2" aria-label="Training days">
+              {draft.days.map((day) => (
+                <button
+                  key={day.id}
+                  type="button"
+                  aria-pressed={activeDay?.id === day.id}
+                  onClick={() => setActiveDayId(day.id)}
+                  className={`h-11 shrink-0 rounded-md border px-4 text-sm font-medium ${activeDay?.id === day.id ? 'border-accent bg-accent-weak text-accent' : 'border-line-input bg-surface text-ink-2'}`}
+                >
+                  {WEEKDAYS.find((entry) => entry.id === day.weekday)?.short}
+                </button>
               ))}
             </div>
-          </fieldset>
-          <div className="flex flex-wrap justify-between gap-2">
-            <Button onClick={() => setStage('setup')}>Back</Button>
-            <Button variant="primary" disabled={busy} onClick={() => void createDraft()}>
-              {busy
-                ? 'Creating draft'
-                : mode === 'manual'
-                  ? 'Start adding exercises'
-                  : 'Create local draft'}
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      {stage === 'edit' && draft ? (
-        <div>
-          <div className="flex gap-2 overflow-x-auto pb-2" aria-label="Training days">
-            {draft.days.map((day) => (
-              <button
-                key={day.id}
-                type="button"
-                aria-pressed={activeDay?.id === day.id}
-                onClick={() => setActiveDayId(day.id)}
-                className={`h-11 shrink-0 rounded-md border px-4 text-sm font-medium ${activeDay?.id === day.id ? 'border-accent bg-accent-weak text-accent' : 'border-line-input bg-surface text-ink-2'}`}
-              >
-                {WEEKDAYS.find((entry) => entry.id === day.weekday)?.short}
-              </button>
-            ))}
-          </div>
-          {activeDay ? (
-            <section className="mt-3" aria-labelledby={`edit-${activeDay.id}`}>
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <Field label="Day name" className="min-w-0 flex-1">
-                  {({ id, describedBy }) => (
-                    <TextInput
-                      id={id}
-                      aria-describedby={describedBy}
-                      value={activeDay.name}
-                      maxLength={LIMITS.workoutDayNameMaxLength}
-                      onChange={(event) =>
-                        updateDay(activeDay.id, (day) => ({ ...day, name: event.target.value }))
-                      }
-                    />
-                  )}
-                </Field>
-                <Button variant="primary" onClick={() => setPickerOpen(true)}>
-                  Add exercise
-                </Button>
-              </div>
-              <h3 id={`edit-${activeDay.id}`} className="sr-only">
-                Exercises for {activeDay.name}
-              </h3>
-              <div className="mt-4 grid gap-3">
-                {activeDay.exercises.map((exercise, index) => (
-                  <article
-                    key={exercise.id}
-                    className="rounded-md border border-line bg-surface p-3"
-                  >
-                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
-                      <button
-                        type="button"
-                        className="min-w-0 text-left font-semibold text-ink underline-offset-4 hover:underline"
-                        onClick={() => setDetails(exercise)}
-                      >
-                        {index + 1}. {exercise.name}
-                      </button>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="quiet"
-                          aria-label={`Move ${exercise.name} up`}
-                          disabled={index === 0}
-                          onClick={() => moveExercise(index, -1)}
+            {activeDay ? (
+              <section className="mt-3" aria-labelledby={`edit-${activeDay.id}`}>
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <Field label="Day name" className="min-w-0 flex-1">
+                    {({ id, describedBy }) => (
+                      <TextInput
+                        id={id}
+                        aria-describedby={describedBy}
+                        value={activeDay.name}
+                        maxLength={LIMITS.workoutDayNameMaxLength}
+                        onChange={(event) =>
+                          updateDay(activeDay.id, (day) => ({ ...day, name: event.target.value }))
+                        }
+                      />
+                    )}
+                  </Field>
+                  <Button variant="primary" onClick={() => setPickerOpen(true)}>
+                    Add exercise
+                  </Button>
+                </div>
+                <h3 id={`edit-${activeDay.id}`} className="sr-only">
+                  Exercises for {activeDay.name}
+                </h3>
+                <div className="mt-4 grid gap-3">
+                  {activeDay.exercises.map((exercise, index) => (
+                    <article
+                      key={exercise.id}
+                      className="rounded-md border border-line bg-surface p-3"
+                    >
+                      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                        <button
+                          type="button"
+                          className="min-w-0 text-left font-semibold text-ink underline-offset-4 hover:underline"
+                          onClick={() => setDetails(exercise)}
                         >
-                          <IconArrowUp />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="quiet"
-                          aria-label={`Move ${exercise.name} down`}
-                          disabled={index === activeDay.exercises.length - 1}
-                          onClick={() => moveExercise(index, 1)}
-                        >
-                          <IconArrowDown />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="quiet"
-                          aria-label={`Remove ${exercise.name}`}
-                          onClick={() =>
-                            updateDay(activeDay.id, (day) => ({
-                              ...day,
-                              exercises: day.exercises.filter((entry) => entry.id !== exercise.id),
-                            }))
-                          }
-                        >
-                          <IconTrash />
-                        </Button>
+                          {index + 1}. {exercise.name}
+                        </button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="icon"
+                            variant="quiet"
+                            aria-label={`Move ${exercise.name} up`}
+                            disabled={index === 0}
+                            onClick={() => moveExercise(index, -1)}
+                          >
+                            <IconArrowUp />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="quiet"
+                            aria-label={`Move ${exercise.name} down`}
+                            disabled={index === activeDay.exercises.length - 1}
+                            onClick={() => moveExercise(index, 1)}
+                          >
+                            <IconArrowDown />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="quiet"
+                            aria-label={`Remove ${exercise.name}`}
+                            onClick={() =>
+                              updateDay(activeDay.id, (day) => ({
+                                ...day,
+                                exercises: day.exercises.filter(
+                                  (entry) => entry.id !== exercise.id,
+                                ),
+                              }))
+                            }
+                          >
+                            <IconTrash />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <Field label="Sets">
+                      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <Field label="Sets">
+                          {({ id, describedBy }) => (
+                            <NumberInput
+                              id={id}
+                              aria-describedby={describedBy}
+                              value={exercise.sets}
+                              onChange={(event) => {
+                                const value = integerInput(event.target.value);
+                                if (value !== undefined)
+                                  updateExercise(activeDay.id, exercise.id, { sets: value });
+                              }}
+                            />
+                          )}
+                        </Field>
+                        <Field label="Min reps">
+                          {({ id, describedBy }) => (
+                            <NumberInput
+                              id={id}
+                              aria-describedby={describedBy}
+                              value={exercise.repsMin}
+                              onChange={(event) => {
+                                const value = integerInput(event.target.value);
+                                if (value !== undefined)
+                                  updateExercise(activeDay.id, exercise.id, { repsMin: value });
+                              }}
+                            />
+                          )}
+                        </Field>
+                        <Field label="Max reps">
+                          {({ id, describedBy }) => (
+                            <NumberInput
+                              id={id}
+                              aria-describedby={describedBy}
+                              value={exercise.repsMax}
+                              onChange={(event) => {
+                                const value = integerInput(event.target.value);
+                                if (value !== undefined)
+                                  updateExercise(activeDay.id, exercise.id, { repsMax: value });
+                              }}
+                            />
+                          )}
+                        </Field>
+                        <Field label="Rest seconds" hint="Optional">
+                          {({ id, describedBy }) => (
+                            <NumberInput
+                              id={id}
+                              aria-describedby={describedBy}
+                              value={exercise.restSeconds ?? ''}
+                              onChange={(event) => {
+                                if (event.target.value === '') {
+                                  updateExercise(activeDay.id, exercise.id, {
+                                    restSeconds: undefined,
+                                  });
+                                  return;
+                                }
+                                const value = integerInput(event.target.value);
+                                if (value !== undefined)
+                                  updateExercise(activeDay.id, exercise.id, {
+                                    restSeconds: value,
+                                  });
+                              }}
+                            />
+                          )}
+                        </Field>
+                      </div>
+                      <Field label="Notes" hint="Optional" className="mt-3">
                         {({ id, describedBy }) => (
-                          <NumberInput
+                          <TextInput
                             id={id}
                             aria-describedby={describedBy}
-                            value={exercise.sets}
-                            onChange={(event) => {
-                              const value = integerInput(event.target.value);
-                              if (value !== undefined)
-                                updateExercise(activeDay.id, exercise.id, { sets: value });
-                            }}
+                            maxLength={LIMITS.workoutNoteMaxLength}
+                            value={exercise.notes ?? ''}
+                            onChange={(event) =>
+                              updateExercise(activeDay.id, exercise.id, {
+                                notes: event.target.value || undefined,
+                              })
+                            }
                           />
                         )}
                       </Field>
-                      <Field label="Min reps">
-                        {({ id, describedBy }) => (
-                          <NumberInput
-                            id={id}
-                            aria-describedby={describedBy}
-                            value={exercise.repsMin}
-                            onChange={(event) => {
-                              const value = integerInput(event.target.value);
-                              if (value !== undefined)
-                                updateExercise(activeDay.id, exercise.id, { repsMin: value });
-                            }}
-                          />
-                        )}
-                      </Field>
-                      <Field label="Max reps">
-                        {({ id, describedBy }) => (
-                          <NumberInput
-                            id={id}
-                            aria-describedby={describedBy}
-                            value={exercise.repsMax}
-                            onChange={(event) => {
-                              const value = integerInput(event.target.value);
-                              if (value !== undefined)
-                                updateExercise(activeDay.id, exercise.id, { repsMax: value });
-                            }}
-                          />
-                        )}
-                      </Field>
-                      <Field label="Rest seconds" hint="Optional">
-                        {({ id, describedBy }) => (
-                          <NumberInput
-                            id={id}
-                            aria-describedby={describedBy}
-                            value={exercise.restSeconds ?? ''}
-                            onChange={(event) => {
-                              if (event.target.value === '') {
-                                updateExercise(activeDay.id, exercise.id, {
-                                  restSeconds: undefined,
-                                });
-                                return;
-                              }
-                              const value = integerInput(event.target.value);
-                              if (value !== undefined)
-                                updateExercise(activeDay.id, exercise.id, {
-                                  restSeconds: value,
-                                });
-                            }}
-                          />
-                        )}
-                      </Field>
-                    </div>
-                    <Field label="Notes" hint="Optional" className="mt-3">
-                      {({ id, describedBy }) => (
-                        <TextInput
-                          id={id}
-                          aria-describedby={describedBy}
-                          maxLength={LIMITS.workoutNoteMaxLength}
-                          value={exercise.notes ?? ''}
-                          onChange={(event) =>
-                            updateExercise(activeDay.id, exercise.id, {
-                              notes: event.target.value || undefined,
-                            })
-                          }
-                        />
-                      )}
-                    </Field>
-                  </article>
-                ))}
-                {activeDay.exercises.length === 0 ? (
-                  <p className="rounded-md border border-line bg-sunken p-4 text-sm text-ink-2">
-                    No exercises yet. Add the first movement for this day.
-                  </p>
-                ) : null}
-              </div>
-            </section>
-          ) : null}
-          <div className="mt-5 flex flex-wrap justify-between gap-2">
-            <Button onClick={() => setStage(existing ? 'setup' : 'schedule')}>
-              {existing ? 'Edit setup' : 'Back'}
-            </Button>
-            <Button variant="primary" onClick={() => setStage('review')}>
-              Review program
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      {stage === 'review' && draft ? (
-        <div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-md bg-sunken p-3">
-              <p className="text-xs text-ink-3">Schedule</p>
-              <p className="numeric mt-1 font-semibold">{draft.days.length} days</p>
-            </div>
-            <div className="rounded-md bg-sunken p-3">
-              <p className="text-xs text-ink-3">Exercises</p>
-              <p className="numeric mt-1 font-semibold">{totalExercises}</p>
-            </div>
-            <div className="rounded-md bg-sunken p-3">
-              <p className="text-xs text-ink-3">Duration</p>
-              <p className="numeric mt-1 font-semibold">{draft.sessionMinutes} min</p>
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3">
-            {draft.days.map((day) => (
-              <section key={day.id} className="rounded-md border border-line p-3">
-                <h3 className="font-semibold">{day.name}</h3>
-                {day.exercises.length > 0 ? (
-                  <ol className="mt-2 space-y-1 text-sm text-ink-2">
-                    {day.exercises.map((exercise) => (
-                      <li key={exercise.id}>
-                        {exercise.name}:{' '}
-                        <span className="numeric">
-                          {exercise.sets} × {exercise.repsMin}
-                          {exercise.repsMax === exercise.repsMin ? '' : ` to ${exercise.repsMax}`}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="mt-2 text-sm text-ink-3">No exercises added.</p>
-                )}
+                    </article>
+                  ))}
+                  {activeDay.exercises.length === 0 ? (
+                    <p className="rounded-md border border-line bg-sunken p-4 text-sm text-ink-2">
+                      No exercises yet. Add the first movement for this day.
+                    </p>
+                  ) : null}
+                </div>
               </section>
-            ))}
-          </div>
-          <div className="mt-5 flex flex-wrap justify-between gap-2">
-            <Button onClick={() => setStage('edit')}>Edit exercises</Button>
-            <Button variant="primary" disabled={busy} onClick={() => void save()}>
-              {busy ? 'Saving' : 'Save program'}
-            </Button>
-          </div>
-          {existing ? (
-            <div className="mt-6 border-t border-line pt-5">
-              {!confirmDelete ? (
-                <Button variant="quiet" onClick={() => setConfirmDelete(true)}>
-                  Delete program
-                </Button>
-              ) : (
-                <Callout tone="error">
-                  <p>Delete this program? This cannot be undone.</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
-                    <Button variant="danger" disabled={busy} onClick={() => void removePlan()}>
-                      Yes, delete program
-                    </Button>
-                  </div>
-                </Callout>
-              )}
+            ) : null}
+            <div className="mt-5 flex flex-wrap justify-between gap-2">
+              <Button onClick={() => setStage(existing ? 'setup' : 'schedule')}>
+                {existing ? 'Edit setup' : 'Back'}
+              </Button>
+              <Button variant="primary" onClick={() => setStage('review')}>
+                Review program
+              </Button>
             </div>
-          ) : null}
-        </div>
-      ) : null}
+          </div>
+        ) : null}
+
+        {stage === 'review' && draft ? (
+          <div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-md bg-sunken p-3">
+                <p className="text-xs text-ink-3">Schedule</p>
+                <p className="numeric mt-1 font-semibold">{draft.days.length} days</p>
+              </div>
+              <div className="rounded-md bg-sunken p-3">
+                <p className="text-xs text-ink-3">Exercises</p>
+                <p className="numeric mt-1 font-semibold">{totalExercises}</p>
+              </div>
+              <div className="rounded-md bg-sunken p-3">
+                <p className="text-xs text-ink-3">Duration</p>
+                <p className="numeric mt-1 font-semibold">{draft.sessionMinutes} min</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {draft.days.map((day) => (
+                <section key={day.id} className="rounded-md border border-line p-3">
+                  <h3 className="font-semibold">{day.name}</h3>
+                  {day.exercises.length > 0 ? (
+                    <ol className="mt-2 space-y-1 text-sm text-ink-2">
+                      {day.exercises.map((exercise) => (
+                        <li key={exercise.id}>
+                          {exercise.name}:{' '}
+                          <span className="numeric">
+                            {exercise.sets} × {exercise.repsMin}
+                            {exercise.repsMax === exercise.repsMin ? '' : ` to ${exercise.repsMax}`}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="mt-2 text-sm text-ink-3">No exercises added.</p>
+                  )}
+                </section>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap justify-between gap-2">
+              <Button onClick={() => setStage('edit')}>Edit exercises</Button>
+              <Button variant="primary" disabled={busy} onClick={() => void save()}>
+                {busy ? 'Saving' : 'Save program'}
+              </Button>
+            </div>
+            {existing ? (
+              <div className="mt-6 border-t border-line pt-5">
+                {!confirmDelete ? (
+                  <Button variant="quiet" onClick={() => setConfirmDelete(true)}>
+                    Delete program
+                  </Button>
+                ) : (
+                  <Callout tone="error">
+                    <p>Delete this program? This cannot be undone.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                      <Button variant="danger" disabled={busy} onClick={() => void removePlan()}>
+                        Yes, delete program
+                      </Button>
+                    </div>
+                  </Callout>
+                )}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       <ExercisePickerDialog
         open={pickerOpen}

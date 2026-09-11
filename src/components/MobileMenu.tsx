@@ -31,17 +31,24 @@ export function MobileMenu({
     const element = ref.current;
     if (!element) return;
     if (open && !element.open) {
+      element.inert = false;
       element.showModal();
       element.querySelector<HTMLElement>('[data-autofocus]')?.focus();
     }
     if (!open && element.open) element.close();
+    if (!open) element.inert = true;
   }, [open]);
 
   return (
     <dialog
       ref={ref}
       id={id}
-      onClose={onClose}
+      onClose={(event) => {
+        // A queued close event must not close a freshly reopened menu.
+        if (event.currentTarget.open) return;
+        event.currentTarget.inert = true;
+        onClose();
+      }}
       aria-labelledby={`${id}-title`}
       className="drawer border-l border-line bg-surface text-ink shadow-raised"
     >

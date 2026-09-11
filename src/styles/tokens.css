@@ -118,9 +118,16 @@
   --shadow-card: 0 1px 0 rgb(22 21 15 / 0.04), 0 1px 3px rgb(22 21 15 / 0.07);
   --shadow-raised: 0 1px 0 rgb(22 21 15 / 0.05), 0 4px 14px rgb(22 21 15 / 0.11);
 
-  /* One short spatial transition for opening a machine reference image. */
-  --duration-fast: 180ms;
+  /* Motion: quick feedback, a quiet content change, and occasional surfaces. */
+  --duration-feedback: 120ms;
+  --default-transition-duration: var(--duration-feedback);
+  --default-transition-timing-function: ease;
+  --duration-surface: 200ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-content-offset: 3px;
+  --motion-surface-offset: 4px;
+  --motion-drawer-offset: 12px;
+  --motion-content-opacity: 0.96;
 
   /* ---- Breakpoints ---- */
   --breakpoint-*: initial;

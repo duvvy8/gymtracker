@@ -18,6 +18,7 @@ export function ExerciseDetailDialog({
 
   return (
     <Dialog
+      retainOnClose
       open={exercise !== null}
       onClose={onClose}
       title={exercise?.name ?? 'Exercise'}

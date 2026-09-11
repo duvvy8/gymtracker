@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { TodayPage } from './pages/TodayPage';
 import { LogFoodPage } from './pages/LogFoodPage';
@@ -47,15 +47,29 @@ function RouteFallback() {
 }
 
 function lazyRoute(element: React.ReactNode) {
-  return <Suspense fallback={<RouteFallback />}>{element}</Suspense>;
+  return <Suspense fallback={<RouteFallback />}>{pageContent(element)}</Suspense>;
+}
+
+/** Mount only the routed content; navigation and focus remain immediate. */
+function pageContent(element: React.ReactNode) {
+  return <PageContent>{element}</PageContent>;
+}
+
+function PageContent({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  return (
+    <div key={pathname} className="motion-content">
+      {children}
+    </div>
+  );
 }
 
 export function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<TodayPage />} />
-        <Route path="log" element={<LogFoodPage />} />
+        <Route index element={pageContent(<TodayPage />)} />
+        <Route path="log" element={pageContent(<LogFoodPage />)} />
         <Route path="history" element={lazyRoute(<HistoryPage />)} />
         <Route path="programs" element={lazyRoute(<ProgramsPage />)} />
         <Route path="machines" element={lazyRoute(<MachinesPage />)} />

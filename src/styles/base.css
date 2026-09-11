@@ -90,11 +90,12 @@
     max-height: calc(100dvh - 2rem);
     padding: 0;
     overflow: hidden;
+    /* Keep the column geometry while display remains flex during CSS exit. */
+    flex-direction: column;
   }
 
   dialog[open] {
     display: flex;
-    flex-direction: column;
   }
 
   /* The navigation drawer. Same native dialog, anchored to the right edge and
@@ -113,22 +114,90 @@
     background-color: rgb(22 21 15 / 0.45);
   }
 
-  dialog.image-lightbox[open] {
-    animation: image-lightbox-in var(--duration-fast) var(--ease-standard);
+  /* Only content moves: shell, focus indicators and pointer targets stay put.
+     Starting styles do not replay on typing or ordinary React renders. */
+  .motion-content {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--duration-feedback) var(--ease-standard),
+      transform var(--duration-feedback) var(--ease-standard);
   }
 
-  @keyframes image-lightbox-in {
-    from {
+  @starting-style {
+    .motion-content {
+      opacity: var(--motion-content-opacity);
+      transform: translateY(var(--motion-content-offset));
+    }
+  }
+
+  /* Native close restores focus immediately; only the visual surface remains
+     for the exit. Discrete display/overlay transitions never interpolate size. */
+  dialog {
+    opacity: 0;
+    transform: translateY(var(--motion-surface-offset));
+    transition:
+      opacity var(--duration-surface) var(--ease-standard),
+      transform var(--duration-surface) var(--ease-standard),
+      display var(--duration-surface) allow-discrete,
+      overlay var(--duration-surface) allow-discrete;
+  }
+
+  dialog.drawer {
+    transform: translateX(var(--motion-drawer-offset));
+  }
+
+  dialog[open] {
+    opacity: 1;
+    transform: none;
+  }
+
+  dialog:not([open]),
+  dialog:not([open])::backdrop {
+    pointer-events: none;
+  }
+
+  dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity var(--duration-surface) var(--ease-standard),
+      display var(--duration-surface) allow-discrete,
+      overlay var(--duration-surface) allow-discrete;
+  }
+
+  dialog[open]::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    dialog[open] {
       opacity: 0;
-      transform: scale(0.985);
+      transform: translateY(var(--motion-surface-offset));
     }
-    to {
-      opacity: 1;
-      transform: scale(1);
+
+    dialog.drawer[open] {
+      transform: translateX(var(--motion-drawer-offset));
     }
+
+    dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+  /* Repeated keyboard actions remain immediate, including Escape exits. */
+  [data-motion='instant'] .motion-content,
+  [data-motion='instant'] dialog,
+  [data-motion='instant'] dialog::backdrop {
+    transform: none !important;
+    transition: none !important;
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .motion-content,
+    dialog {
+      transform: none !important;
+      transition: none !important;
+    }
+
     *,
     *::before,
     *::after {

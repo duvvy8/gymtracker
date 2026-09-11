@@ -62,6 +62,7 @@ export function AppShell() {
   const { pathname } = useLocation();
   const route = findRoute(pathname);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [keyboardInput, setKeyboardInput] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(pathname);
@@ -96,7 +97,12 @@ export function AppShell() {
   }, [pathname, route.navLabel]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-paper text-ink">
+    <div
+      className="flex min-h-dvh flex-col bg-paper text-ink"
+      data-motion={keyboardInput ? 'instant' : undefined}
+      onKeyDownCapture={() => setKeyboardInput(true)}
+      onPointerDownCapture={() => setKeyboardInput(false)}
+    >
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-raised"
