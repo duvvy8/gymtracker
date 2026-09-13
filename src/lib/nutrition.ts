@@ -1,7 +1,14 @@
-import { KG_PER_LB } from './limits';
-import type { Food, LogUnit, Macros, WeightUnit } from '../types';
+import { KG_PER_LB } from './limits.ts';
+import type { Food, LogUnit, Macros, Nutrients, WeightUnit } from '../types/index.ts';
 
 export const ZERO_MACROS: Macros = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+export const ZERO_NUTRIENTS: Nutrients = {
+  ...ZERO_MACROS,
+  fibre: 0,
+  sugars: 0,
+  saturatedFat: 0,
+  salt: 0,
+};
 
 /** Rounds for storage. Keeps one decimal so small servings do not vanish. */
 export function round1(value: number): number {
@@ -18,8 +25,61 @@ export function round1(value: number): number {
 export function servingMultiplier(food: Food, amount: number, unit: LogUnit): number | null {
   if (!Number.isFinite(amount) || amount <= 0) return null;
   if (unit === 'serving') return amount;
+  if (unit === 'ml') return null;
   if (!food.servingGrams || food.servingGrams <= 0) return null;
   return amount / food.servingGrams;
+}
+
+export function scaleNutrients(
+  basis: Nutrients,
+  amount: number,
+  basisUnit: '100g' | '100ml' | 'serving',
+): Nutrients {
+  const multiplier = basisUnit === 'serving' ? amount : amount / 100;
+  return {
+    calories: round1(basis.calories * multiplier),
+    protein: round1(basis.protein * multiplier),
+    carbs: round1(basis.carbs * multiplier),
+    fat: round1(basis.fat * multiplier),
+    fibre: round1(basis.fibre * multiplier),
+    sugars: round1(basis.sugars * multiplier),
+    saturatedFat: round1(basis.saturatedFat * multiplier),
+    salt: round1(basis.salt * multiplier),
+  };
+}
+
+export function nutrientsFromFood(
+  food: Pick<
+    Food,
+    'calories' | 'protein' | 'carbs' | 'fat' | 'fibre' | 'sugars' | 'saturatedFat' | 'salt'
+  >,
+): Nutrients {
+  return {
+    calories: food.calories,
+    protein: food.protein,
+    carbs: food.carbs,
+    fat: food.fat,
+    fibre: food.fibre ?? 0,
+    sugars: food.sugars ?? 0,
+    saturatedFat: food.saturatedFat ?? 0,
+    salt: food.salt ?? 0,
+  };
+}
+
+export function sumNutrients(entries: readonly Partial<Nutrients>[]): Nutrients {
+  return entries.reduce<Nutrients>(
+    (total, entry) => ({
+      calories: total.calories + (entry.calories ?? 0),
+      protein: total.protein + (entry.protein ?? 0),
+      carbs: total.carbs + (entry.carbs ?? 0),
+      fat: total.fat + (entry.fat ?? 0),
+      fibre: total.fibre + (entry.fibre ?? 0),
+      sugars: total.sugars + (entry.sugars ?? 0),
+      saturatedFat: total.saturatedFat + (entry.saturatedFat ?? 0),
+      salt: total.salt + (entry.salt ?? 0),
+    }),
+    { ...ZERO_NUTRIENTS },
+  );
 }
 
 /** Nutrition totals for logging `amount` of `food`. */
@@ -83,6 +143,7 @@ export function formatGrams(value: number): string {
 
 export function formatAmount(amount: number, unit: LogUnit, servingLabel: string): string {
   if (unit === 'g') return `${oneDecimalFormat.format(amount)} g`;
+  if (unit === 'ml') return `${oneDecimalFormat.format(amount)} ml`;
   return `${oneDecimalFormat.format(amount)} x ${servingLabel}`;
 }
 

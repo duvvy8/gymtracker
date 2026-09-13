@@ -3,6 +3,13 @@ export type IsoDate = string;
 
 export type FoodSource = 'custom' | 'openfoodfacts';
 
+export interface SecondaryNutrients {
+  fibre: number;
+  sugars: number;
+  saturatedFat: number;
+  salt: number;
+}
+
 /**
  * A food the user can log. Nutrition figures are always "per one serving",
  * where a serving is described by servingLabel. Foods imported from Open
@@ -23,13 +30,33 @@ export interface Food {
   protein: number;
   carbs: number;
   fat: number;
+  fibre?: number;
+  sugars?: number;
+  saturatedFat?: number;
+  salt?: number;
   /** Lower-cased name, indexed so search does not scan every record. */
   nameLower: string;
   createdAt: number;
   updatedAt: number;
 }
 
-export type LogUnit = 'g' | 'serving';
+export type LogUnit = 'g' | 'ml' | 'serving';
+export type MealCategory = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+export type NutritionConfidence = 'high' | 'medium' | 'low';
+export type NutritionSource = 'cofid' | 'ai-estimate' | 'saved-food' | 'barcode' | 'manual';
+export type MealComponentKind = 'food' | 'drink';
+
+export interface Meal {
+  id?: number;
+  date: IsoDate;
+  name: string;
+  category: MealCategory;
+  /** Snacks live before breakfast, between anchors, or after dinner. */
+  snackSlot?: 0 | 1 | 2 | 3;
+  sortOrder: number;
+  createdAt: number;
+  updatedAt: number;
+}
 
 /**
  * One entry in the food log.
@@ -53,6 +80,24 @@ export interface FoodLog {
   protein: number;
   carbs: number;
   fat: number;
+  fibre?: number;
+  sugars?: number;
+  saturatedFat?: number;
+  salt?: number;
+  /** Present for entries created as part of a named meal. */
+  mealId?: number;
+  mealOrder?: number;
+  componentKind?: MealComponentKind;
+  preparation?: string;
+  portionConfidence?: NutritionConfidence;
+  identityConfidence?: NutritionConfidence;
+  uncertainty?: string;
+  nutritionSource?: NutritionSource;
+  nutritionReference?: string;
+  /** Editable reference nutrition used to recalculate this component. */
+  nutritionBasis?: Nutrients;
+  basisUnit?: '100g' | '100ml' | 'serving';
+  nutritionOverridden?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -87,6 +132,8 @@ export interface Macros {
   carbs: number;
   fat: number;
 }
+
+export interface Nutrients extends Macros, SecondaryNutrients {}
 
 export type MachineId =
   | 'G3-S10'
@@ -200,11 +247,12 @@ export interface PlannerPreferences {
 /** Shape of an export file, and of anything accepted by import. */
 export interface BackupFile {
   format: 'gymtracker-backup';
-  version: 2;
+  version: 3;
   exportedAt: string;
   foods: Food[];
   foodLogs: FoodLog[];
   bodyWeightLogs: BodyWeightLog[];
   settings: Settings | null;
   workoutPlans: WorkoutPlan[];
+  meals: Meal[];
 }

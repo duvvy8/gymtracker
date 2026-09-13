@@ -19,7 +19,7 @@ import { Button } from './ui';
 
 const ROUTE_ICONS: Record<string, typeof IconToday> = {
   '/': IconToday,
-  '/log': IconLog,
+  '/meals': IconLog,
   '/history': IconHistory,
   '/programs': IconPrograms,
   '/machines': IconMachines,

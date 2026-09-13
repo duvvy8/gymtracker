@@ -115,8 +115,8 @@ export function LogFoodPage() {
   return (
     <>
       <PageHeader
-        title="Log food"
-        description="Search what you have saved, scan a barcode, or add something new."
+        title="Saved foods"
+        description="Create and manage reusable foods. The Log action keeps the earlier one-entry workflow available."
         actions={<DateStepper />}
       />
 

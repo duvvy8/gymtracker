@@ -1,18 +1,33 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gymtracker",
-  "compatibility_date": "2026-09-04",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-10",
 
-  // Static assets only. There is deliberately no `main` Worker script: this
-  // application is a client-side SPA with no server component, and adding an
-  // empty Worker would only create a second source of responses.
-  //
-  // It also keeps the security headers honest. Cloudflare applies the
-  // `_headers` file to static asset responses but NOT to responses generated
-  // by Worker code, so with no Worker code every response this site serves is
-  // covered by the policy in dist/_headers.
+  "secrets": {
+    "required": ["GEMINI_API_KEY"],
+  },
+
+  "ratelimits": [
+    {
+      "name": "MEAL_ANALYSIS_RATE_LIMITER",
+      "namespace_id": "13092026",
+      "simple": { "limit": 5, "period": 60 },
+    },
+  ],
+
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 0.01 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 },
+  },
+
+  // Static files still bypass Worker code. Only /api/* reaches the Worker;
+  // every other request keeps the existing asset and route behaviour.
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"],
 
     // The build emits a real HTML file for every known route, each with its
     // own title, description, canonical and robots rule. A matching file is

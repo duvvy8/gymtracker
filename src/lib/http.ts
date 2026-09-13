@@ -21,7 +21,16 @@ const MAX_RESPONSE_BYTES = 512 * 1024;
 const DEFAULT_TIMEOUT_MS = 8000;
 
 export type HttpFailureKind =
-  'blocked' | 'offline' | 'timeout' | 'not-found' | 'rate-limited' | 'server' | 'malformed';
+  | 'blocked'
+  | 'offline'
+  | 'timeout'
+  | 'not-found'
+  | 'rate-limited'
+  | 'server'
+  | 'malformed'
+  | 'not-configured'
+  | 'no-food'
+  | 'unavailable';
 
 export class HttpError extends Error {
   readonly kind: HttpFailureKind;
@@ -141,5 +150,98 @@ export async function getJson(
     // connection on status, content-type and size failures as well.
     globalThis.clearTimeout(timeout);
     controller.abort();
+  }
+}
+
+/** Sends one processed image to the same-origin meal-analysis Worker. */
+export async function postMealImage(image: Blob, signal?: AbortSignal): Promise<unknown> {
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), 35_000);
+  const abortFromCaller = () => controller.abort();
+  signal?.addEventListener('abort', abortFromCaller, { once: true });
+
+  try {
+    const response = await fetch('/api/analyse-meal', {
+      method: 'POST',
+      body: image,
+      signal: controller.signal,
+      headers: { 'Content-Type': image.type, Accept: 'application/json' },
+      credentials: 'same-origin',
+      cache: 'no-store',
+      redirect: 'error',
+      referrerPolicy: 'no-referrer',
+    });
+    if (!response.ok) {
+      // The Worker answers every failure with a short JSON code. Read it so the
+      // distinct states stay distinct, falling back to the status when absent.
+      let code = '';
+      try {
+        const failure = await response.text();
+        if (failure.length <= MAX_RESPONSE_BYTES) {
+          const parsed = JSON.parse(failure) as { error?: unknown };
+          if (typeof parsed.error === 'string') code = parsed.error;
+        }
+      } catch {
+        code = '';
+      }
+      if (code === 'no-food-detected') {
+        throw new HttpError(
+          'no-food',
+          'No food was recognised in that photo. Try a clearer photo of the whole meal, or add the food another way.',
+        );
+      }
+      if (code === 'analysis-capacity-reached') {
+        throw new HttpError(
+          'rate-limited',
+          'AI meal analysis has reached its current usage limit. You can still add foods manually, scan a barcode, or use saved foods.',
+        );
+      }
+      if (response.status === 429) {
+        throw new HttpError('rate-limited', 'Meal analysis is busy. Wait a minute and try again.');
+      }
+      if (code === 'analysis-unavailable') {
+        throw new HttpError(
+          'unavailable',
+          'Meal analysis is busy right now. Try again shortly, or add the meal manually.',
+        );
+      }
+      if (response.status === 503) {
+        throw new HttpError('not-configured', 'Photo analysis is not configured on this site yet.');
+      }
+      throw new HttpError(
+        'server',
+        'The photo could not be analysed. You can retry or enter the meal manually.',
+      );
+    }
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.toLowerCase().includes('application/json')) {
+      throw new HttpError('malformed', 'The analysis response was not in the expected format.');
+    }
+    const declaredLength = Number(response.headers.get('content-length') ?? 0);
+    if (declaredLength > MAX_RESPONSE_BYTES) {
+      throw new HttpError('malformed', 'The analysis response was larger than expected.');
+    }
+    const body = await response.text();
+    if (body.length > MAX_RESPONSE_BYTES) {
+      throw new HttpError('malformed', 'The analysis response was larger than expected.');
+    }
+    return JSON.parse(body) as unknown;
+  } catch (cause) {
+    if (cause instanceof HttpError) throw cause;
+    if (controller.signal.aborted) {
+      throw new HttpError(
+        signal?.aborted ? 'blocked' : 'timeout',
+        signal?.aborted
+          ? 'Meal analysis was cancelled.'
+          : 'Meal analysis took too long. Try again.',
+      );
+    }
+    throw new HttpError(
+      'offline',
+      'Could not reach meal analysis. Check your connection and try again.',
+    );
+  } finally {
+    signal?.removeEventListener('abort', abortFromCaller);
+    globalThis.clearTimeout(timeout);
   }
 }

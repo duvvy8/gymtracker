@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { countBodyWeights, countFoodLogs, countFoods, countWorkoutPlans } from '../db/queries';
+import {
+  countBodyWeights,
+  countFoodLogs,
+  countFoods,
+  countMeals,
+  countWorkoutPlans,
+} from '../db/queries';
 import { DATABASE_NAME } from '../db/schema';
 import { Card, CardHeader, LinkButton, PageHeader } from '../components/ui';
 import { buttonClasses } from '../lib/buttonStyles';
@@ -23,6 +29,7 @@ export function PrivacyPage() {
       foodLogs: await countFoodLogs(),
       bodyWeights: await countBodyWeights(),
       workoutPlans: await countWorkoutPlans(),
+      meals: await countMeals(),
     }),
     [],
   );
@@ -40,13 +47,15 @@ export function PrivacyPage() {
 
           <Section title="What you enter">
             <p>
-              Foods you save, every entry in your food log, your body weight readings, daily calorie
-              and macro targets, and workout programs you create. That is the complete list.
+              Foods and grouped meals you save, every nutrition component, your body weight
+              readings, daily targets, and workout programs you create. Photos selected for meal
+              analysis are not stored in this database.
             </p>
             {counts ? (
               <p className="numeric">
-                Right now this browser holds {counts.foods} foods, {counts.foodLogs} log entries and{' '}
-                {counts.bodyWeights} weight readings and {counts.workoutPlans} workout programs.
+                Right now this browser holds {counts.foods} foods, {counts.meals} meals,{' '}
+                {counts.foodLogs} nutrition entries, {counts.bodyWeights} weight readings and{' '}
+                {counts.workoutPlans} workout programs.
               </p>
             ) : (
               <p className="text-ink-3">Counting what is stored in this browser.</p>
@@ -75,7 +84,7 @@ export function PrivacyPage() {
         <Card>
           <CardHeader
             title="What leaves your device"
-            description="Website delivery and optional product lookups"
+            description="Website delivery and optional lookups or photo analysis"
           />
 
           <Section title="Loading the website">
@@ -119,12 +128,33 @@ export function PrivacyPage() {
             </div>
           </Section>
 
+          <Section title="Optional meal-photo analysis">
+            <p>
+              Only after you choose a photo and press Analyse, the browser makes a smaller JPEG copy
+              and sends that one image to gymtracker&apos;s Cloudflare Worker. The Worker sends it
+              to Google Gemini 3.8 Flash to identify foods and estimate portions. Google receives
+              the image and request metadata such as the Worker&apos;s network address. On the free
+              Gemini API tier, Google may use submitted content to improve its products.
+            </p>
+            <p>
+              The image is held only for that request. gymtracker does not put it in IndexedDB,
+              local storage, a backup, analytics or application logs. The Worker does not save the
+              image or model response. The visible estimates stay a draft until you review and save
+              their nutrition values; only that confirmed text and nutrition is stored locally.
+            </p>
+            <p>
+              Photo analysis is optional. Saved foods, barcode lookup, drinks and manual entry work
+              without it. Remove the preview or close the dialog to discard the local copy before
+              sending, and use those other methods if you do not want a photo processed by Google.
+            </p>
+          </Section>
+
           <Section title="The camera">
             <p>
               The camera turns on only when you press the button that says so, never when a page
               loads. While it is on, each frame is examined in this browser to see whether it
-              contains a barcode, and then discarded. Frames are never saved, never uploaded and
-              never sent anywhere.
+              contains a barcode, and then discarded. Barcode-scanner frames are never saved or
+              uploaded. This is separate from explicitly choosing a meal photo and pressing Analyse.
             </p>
             <p>
               The camera is released as soon as you turn it off, close the scanner, or leave the

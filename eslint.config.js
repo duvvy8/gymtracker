@@ -46,7 +46,13 @@ const bannedSyntax = [
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      '.wrangler/**',
+      'worker-configuration.d.ts',
+    ],
   },
   {
     files: ['**/*.{ts,tsx}'],
@@ -105,6 +111,15 @@ export default tseslint.config(
       ecmaVersion: 2023,
       sourceType: 'module',
       globals: globals.node,
+    },
+  },
+  {
+    // The Worker is the server-side trust boundary and its provider call is
+    // deliberately separate from the browser-only vetted HTTP client.
+    files: ['worker/**/*.ts'],
+    languageOptions: { globals: globals.worker },
+    rules: {
+      'no-restricted-syntax': ['error', ...bannedSyntax.slice(0, -1)],
     },
   },
   {

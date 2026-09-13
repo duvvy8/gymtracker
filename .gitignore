@@ -10,7 +10,11 @@ build/
 *.local
 
 # Environment files
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
 .env
+.env.*
 .env.local
 .env.*.local
 .env.development
@@ -50,3 +54,6 @@ coverage/
 
 # Wrangler local state
 .wrangler/
+
+# Local meal photographs for AI validation. Personal data, never committed.
+.test-meals/

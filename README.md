@@ -1,9 +1,10 @@
 # gymtracker
 
 A nutrition tracker and workout-program builder that keeps personal data in your browser. No
-account or cloud sync. Cloudflare serves the website. Barcode lookups check saved foods first and
-contact Open Food Facts only when there is no local match. Personal logs and programs are not
-uploaded.
+account or cloud sync. Cloudflare serves the website and a small same-origin API for optional
+meal-photo analysis. Barcode lookups check saved foods first and contact Open Food Facts only when
+there is no local match. Saved meals, logs and programs are not uploaded; a chosen meal photo is
+sent transiently to Google Gemini only after the user presses Analyse.
 
 ![The Today screen, showing calorie and macro progress against daily targets](docs/today.png)
 
@@ -21,7 +22,7 @@ lifted or exercise history.
 | Screen   | What it is for                                                                                                                                                                                     |
 | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Today    | Progress against your daily targets, one tap re-logging of recent foods, and the day's entries with edit and delete. The day can be stepped backwards and forwards, so past days can be corrected. |
-| Log food | Search your saved foods by name or brand, scan a barcode, or add something new by hand.                                                                                                            |
+| Meals    | Group Breakfast, Lunch, Dinner and Snacks. Add a reviewed meal from a photo, barcode, saved food, drink or manual nutrition.                                                                       |
 | History  | Daily calories against your target, macros stacked in grams, and the body weight trend, over 7 days, 30 days or 13 weeks.                                                                          |
 | Programs | Create, review, edit and delete reusable workout programs. Manual and local rules-based creation use the same editable result.                                                                     |
 | Machines | Browse the 18 confirmed gym machines by body region, with local reference images, exercise guidance and approximate muscle emphasis.                                                               |
@@ -159,11 +160,12 @@ src/
   pages/       One file per route.
   lib/         Validation, dates, nutrition maths, HTTP, backup, store, design helpers.
   types/       Shared record shapes.
+worker/        Same-origin, rate-limited Gemini image-analysis boundary for /api only.
 ```
 
 ### Data model
 
-Five tables: `foods`, `foodLogs`, `bodyWeightLogs`, `settings` and `workoutPlans`.
+Six tables: `foods`, `foodLogs`, `meals`, `bodyWeightLogs`, `settings` and `workoutPlans`.
 
 A food holds nutrition per serving, plus the serving's weight in grams when it is known, which is
 what makes logging by weight possible.
@@ -172,13 +174,18 @@ A log entry holds a **snapshot** of the totals at the moment it was saved, not a
 food. Editing a food later, or deleting it, therefore cannot rewrite history. Entries also keep the
 food id so they can still be re-scaled from the source when it does still exist.
 
+A meal groups linked food-log snapshots under Breakfast, Lunch, Dinner or Snack. Snacks retain one
+of four chronological positions around the three fixed meal anchors. The version 3 migration adds
+the meal table and `mealId` index without rewriting older flat entries, which remain readable and
+continue to count once in Today and History. Version 1 and 2 backups remain importable; exports are
+version 3 and include meals but never photos.
+
 Body weight is always stored in kilograms. Kilograms or pounds is a display preference applied at
 the edge, so switching it never rewrites a record.
 
 A workout plan stores its creation mode, goal, experience level, available machines and ordered
 days. Each day stores ordered exercise snapshots with sets, rep range, optional rest and notes.
-The version 2 Dexie migration only adds this table and leaves all existing nutrition records
-unchanged. Version 1 backups remain importable and are normalized to an empty program list.
+The version 2 Dexie migration added this table and left all existing nutrition records unchanged.
 
 ### Workout planner and machine catalogue
 
@@ -277,18 +284,24 @@ bearing parts:
 - **The camera** is only ever reached from a click, every track is stopped on close, unmount and
   `pagehide`, and frames are decoded locally and discarded.
 - **No CDN at runtime.** Fonts and every dependency are bundled by Vite.
+- **Meal photos** are resized in the browser, capped at 5 MB at the Worker, validated by MIME type
+  and file signature, sent to Gemini 3.8 Flash once with structured output, and discarded after the
+  request. The API key exists only as a Cloudflare secret. Requests are rate limited and responses
+  are never cached. CoFID 2021 reference values replace model nutrition when a confident generic
+  food match is available; every result remains editable before save.
 
 ### Deployment headers
 
 `vite.config.ts` is the single source of truth for the security headers. `npm run build` injects
 the policy as a meta tag into `dist/index.html` and emits `dist/_headers`, which Netlify and
-Cloudflare Pages read directly. `npm run preview` serves the same headers, so the policy can be
-tested against the real production bundle.
+Cloudflare Static Assets reads directly. `npm run preview` serves the same headers, so the policy
+can be tested against the real production bundle. Only `/api/*` runs Worker code; those responses
+set their own no-store and security headers.
 
 ```
 Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none';
   frame-ancestors 'none'; frame-src 'none'; form-action 'self'; script-src 'self';
-  style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self';
+  style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self';
   media-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self';
   connect-src 'self' https://world.openfoodfacts.org; upgrade-insecure-requests
 X-Content-Type-Options: nosniff
@@ -321,8 +334,8 @@ Anyone who can use this device while you are logged in, or who can read the brow
 from disk, can read your food log and workout programs. This application cannot prevent that. If it
 matters, rely on your operating system account password and full disk encryption.
 
-**Clearing browser data deletes everything, permanently.** There is no server and therefore no
-backup. Clearing site data, running a cleanup tool, or using private browsing wipes your whole
+**Clearing browser data deletes everything, permanently.** There is no server-side personal data
+store and therefore no automatic backup. Clearing site data, running a cleanup tool, or using private browsing wipes your whole
 history with no way to recover it. Browsers may also evict storage on their own when a device runs
 low on space. Export a backup from Settings regularly and keep the file somewhere you trust.
 
@@ -330,11 +343,12 @@ low on space. Export a backup from Settings regularly and keep the file somewher
 server side protection of any kind. Anyone who opens the app in this browser profile sees your log.
 Opening it on another device shows an empty database.
 
-**Barcode numbers are sent to Open Food Facts.** When you scan or type a barcode, that number goes
+**Optional inputs can leave the device.** When you scan or type a barcode, that number goes
 to `world.openfoodfacts.org`, which also sees your IP address as any web request would. Nothing
-else is ever transmitted: not your food log, not your weight, not your targets, not your workout
-programs, and no identifier for you or your device. If you never scan a barcode, the application
-makes no application-level third-party requests at all.
+else from the log is included. When you choose a meal photo and press Analyse, a processed copy is
+sent through the same-origin Worker to Google Gemini. It is not persisted or exported. On Gemini&apos;s
+free API tier, Google may use submitted content to improve its products. Both features are optional;
+saved-food, drink and manual entry stay local.
 
 ## Known issues and rough edges
 

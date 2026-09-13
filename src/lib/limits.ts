@@ -14,6 +14,8 @@ export const LIMITS = {
   workoutDayNameMaxLength: 60,
   workoutNoteMaxLength: 240,
   localIdMaxLength: 80,
+  uncertaintyMaxLength: 240,
+  mealComponentsMax: 24,
 
   /** Barcode symbologies this app accepts: EAN-8, UPC-A, EAN-13. */
   barcodeLengths: [8, 12, 13] as const,
@@ -33,6 +35,7 @@ export const LIMITS = {
   /** What the user may log at once. */
   amountGramsMin: 0.1,
   amountGramsMax: 100000,
+  amountMillilitresMax: 100000,
   amountServingsMin: 0.01,
   amountServingsMax: 1000,
 

@@ -5,7 +5,7 @@ import { fileURLToPath, URL } from 'node:url';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import {
-  ALL_ROUTES,
+  STATIC_ROUTES,
   INDEXABLE_ROUTES,
   ROUTES,
   SITE_ORIGIN,
@@ -42,7 +42,7 @@ const CSP_SHARED = [
   "script-src 'self'",
   "style-src 'self'",
   "style-src-attr 'unsafe-inline'",
-  "img-src 'self' data:",
+  "img-src 'self' data: blob:",
   "font-src 'self'",
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
@@ -140,7 +140,7 @@ function structuredData(): string {
 
 /** The head fragment that replaces the placeholder for one route. */
 function headFor(path: string): string {
-  const route = ALL_ROUTES.find((entry) => entry.path === path) ?? ROUTES.notFound;
+  const route = STATIC_ROUTES.find((entry) => entry.path === path) ?? ROUTES.notFound;
   const isRealRoute = path !== '*';
   const robots = route.indexable ? 'index, follow' : 'noindex, follow';
   const image = SITE_ORIGIN + SOCIAL_IMAGE;
@@ -227,7 +227,7 @@ function siteAssets(): Plugin {
     writeBundle() {
       const homeHtml = readFileSync(join(outDir, 'index.html'), 'utf8');
 
-      for (const route of ALL_ROUTES) {
+      for (const route of STATIC_ROUTES) {
         if (route.path === '/') continue;
         write(route.path.slice(1) + '/index.html', swapHead(homeHtml, route.path));
       }

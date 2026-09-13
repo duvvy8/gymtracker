@@ -33,16 +33,33 @@ export const ROUTES = {
     navLabel: 'Today',
     tabLabel: 'Today',
     description:
-      'Track calories and macros, build workout programs and browse your gym machines. Personal data stays in your browser with no account or cloud sync.',
+      'Track grouped meals, calories and macros, build workout programs and browse gym machines. Saved personal data stays in your browser with no account or cloud sync.',
     indexable: true,
   },
-  log: {
-    path: '/log',
-    title: 'Log food: gymtracker',
-    navLabel: 'Log food',
-    tabLabel: 'Log',
+  meals: {
+    path: '/meals',
+    title: 'Meals: gymtracker',
+    navLabel: 'Meals',
+    tabLabel: 'Meals',
     description:
-      'Search your saved foods, scan a barcode, or add a food by hand, then log it against the day you are viewing.',
+      'Create grouped meals from a photo, barcode, saved foods, drinks or manual nutrition, then review every item before saving.',
+    indexable: false,
+  },
+  legacyLog: {
+    path: '/log',
+    title: 'Meals: gymtracker',
+    navLabel: 'Meals',
+    tabLabel: 'Meals',
+    description: 'The former Log food page now opens Meals.',
+    indexable: false,
+  },
+  foods: {
+    path: '/foods',
+    title: 'Saved foods: gymtracker',
+    navLabel: 'Saved foods',
+    tabLabel: 'Foods',
+    description:
+      'Create, review and manage reusable foods, including optional Open Food Facts barcode lookup.',
     indexable: false,
   },
   history: {
@@ -87,7 +104,7 @@ export const ROUTES = {
     navLabel: 'Privacy',
     tabLabel: 'Privacy',
     description:
-      'How gymtracker stores your food log locally, uses Open Food Facts for barcode lookups, and handles website delivery and exported backups.',
+      'How gymtracker stores saved data locally and handles optional Open Food Facts lookups, transient Gemini meal-photo analysis, website delivery and backups.',
     indexable: true,
   },
   notFound: {
@@ -103,7 +120,7 @@ export const ROUTES = {
 /** The five destinations reachable in one tap from the bottom tab bar. */
 export const PRIMARY_ROUTES: RouteMeta[] = [
   ROUTES.today,
-  ROUTES.log,
+  ROUTES.meals,
   ROUTES.programs,
   ROUTES.machines,
   ROUTES.history,
@@ -111,14 +128,16 @@ export const PRIMARY_ROUTES: RouteMeta[] = [
 
 /** Everything a person can navigate to, in the order the menu lists them. */
 export const ALL_ROUTES: RouteMeta[] = [...PRIMARY_ROUTES, ROUTES.settings, ROUTES.privacy];
+export const STATIC_ROUTES: RouteMeta[] = [...ALL_ROUTES, ROUTES.legacyLog, ROUTES.foods];
 
 /** Routes that belong in sitemap.xml, which is exactly the indexable ones. */
 export const INDEXABLE_ROUTES: RouteMeta[] = ALL_ROUTES.filter((route) => route.indexable);
 
 export function findRoute(pathname: string): RouteMeta {
-  return ALL_ROUTES.find((route) => route.path === pathname) ?? ROUTES.notFound;
+  return STATIC_ROUTES.find((route) => route.path === pathname) ?? ROUTES.notFound;
 }
 
 export function canonicalFor(path: string): string {
-  return path === '/' ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${path}`;
+  if (path === '/') return `${SITE_ORIGIN}/`;
+  return `${SITE_ORIGIN}${path === '/log' ? '/meals' : path}`;
 }

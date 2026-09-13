@@ -6,6 +6,7 @@ import {
   describeIssue,
   foodLogSchema,
   foodSchema,
+  mealSchema,
   sanitizeText,
   settingsSchema,
   workoutPlanSchema,
@@ -17,6 +18,7 @@ import type {
   Food,
   FoodLog,
   IsoDate,
+  Meal,
   Settings,
   WorkoutPlan,
 } from '../types';
@@ -89,6 +91,10 @@ export async function saveFood(draft: FoodDraft): Promise<number> {
     protein: draft.protein,
     carbs: draft.carbs,
     fat: draft.fat,
+    ...(draft.fibre === undefined ? {} : { fibre: draft.fibre }),
+    ...(draft.sugars === undefined ? {} : { sugars: draft.sugars }),
+    ...(draft.saturatedFat === undefined ? {} : { saturatedFat: draft.saturatedFat }),
+    ...(draft.salt === undefined ? {} : { salt: draft.salt }),
     nameLower: sanitizeText(draft.name, LIMITS.nameMaxLength).toLowerCase(),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
@@ -168,6 +174,30 @@ export async function saveFoodLog(draft: FoodLogDraft): Promise<number> {
     protein: draft.protein,
     carbs: draft.carbs,
     fat: draft.fat,
+    ...(draft.fibre === undefined ? {} : { fibre: draft.fibre }),
+    ...(draft.sugars === undefined ? {} : { sugars: draft.sugars }),
+    ...(draft.saturatedFat === undefined ? {} : { saturatedFat: draft.saturatedFat }),
+    ...(draft.salt === undefined ? {} : { salt: draft.salt }),
+    ...(draft.mealId === undefined ? {} : { mealId: draft.mealId }),
+    ...(draft.mealOrder === undefined ? {} : { mealOrder: draft.mealOrder }),
+    ...(draft.componentKind === undefined ? {} : { componentKind: draft.componentKind }),
+    ...(draft.preparation ? { preparation: draft.preparation } : {}),
+    ...(draft.portionConfidence === undefined
+      ? {}
+      : { portionConfidence: draft.portionConfidence }),
+    ...(draft.identityConfidence === undefined
+      ? {}
+      : { identityConfidence: draft.identityConfidence }),
+    ...(draft.uncertainty ? { uncertainty: draft.uncertainty } : {}),
+    ...(draft.nutritionSource === undefined ? {} : { nutritionSource: draft.nutritionSource }),
+    ...(draft.nutritionReference === undefined
+      ? {}
+      : { nutritionReference: draft.nutritionReference }),
+    ...(draft.nutritionBasis === undefined ? {} : { nutritionBasis: { ...draft.nutritionBasis } }),
+    ...(draft.basisUnit === undefined ? {} : { basisUnit: draft.basisUnit }),
+    ...(draft.nutritionOverridden === undefined
+      ? {}
+      : { nutritionOverridden: draft.nutritionOverridden }),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
@@ -191,6 +221,114 @@ export async function deleteFoodLog(id: number): Promise<void> {
 
 export function countFoodLogs(): Promise<number> {
   return db.foodLogs.count();
+}
+
+/* -------------------------------------------------------------------------
+ * Meals
+ * ---------------------------------------------------------------------- */
+
+export type MealDraft = Omit<Meal, 'id' | 'createdAt' | 'updatedAt'> & { id?: number };
+
+export async function saveMeal(draft: MealDraft): Promise<number> {
+  const now = Date.now();
+  const existing = draft.id ? await db.meals.get(draft.id) : undefined;
+  const record = parseOrThrow(
+    mealSchema,
+    {
+      ...(draft.id ? { id: draft.id } : {}),
+      date: draft.date,
+      name: draft.name,
+      category: draft.category,
+      ...(draft.snackSlot === undefined ? {} : { snackSlot: draft.snackSlot }),
+      sortOrder: draft.sortOrder,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    },
+    'This meal',
+  );
+  return db.meals.put(record as Meal);
+}
+
+export function listMealsForDate(date: IsoDate): Promise<Meal[]> {
+  return db.meals.where('date').equals(date).sortBy('createdAt');
+}
+
+export function countMeals(): Promise<number> {
+  return db.meals.count();
+}
+
+export interface MealWithComponents {
+  meal: Meal;
+  components: FoodLog[];
+}
+
+export async function listMealBundlesForDate(date: IsoDate): Promise<MealWithComponents[]> {
+  const [meals, logs] = await Promise.all([listMealsForDate(date), listLogsForDate(date)]);
+  return meals.map((meal) => ({
+    meal,
+    components: logs
+      .filter((entry) => entry.mealId === meal.id)
+      .sort((a, b) => (a.mealOrder ?? 0) - (b.mealOrder ?? 0)),
+  }));
+}
+
+export async function saveMealWithComponents(
+  meal: MealDraft,
+  components: readonly FoodLogDraft[],
+): Promise<number> {
+  if (components.length === 0 || components.length > LIMITS.mealComponentsMax) {
+    throw new ValidationError(`A meal needs between 1 and ${LIMITS.mealComponentsMax} items.`);
+  }
+
+  return db.transaction('rw', [db.meals, db.foodLogs], async () => {
+    const mealId = await saveMeal(meal);
+    if (meal.id) await db.foodLogs.where('mealId').equals(meal.id).delete();
+    for (const [index, component] of components.entries()) {
+      await saveFoodLog({ ...component, date: meal.date, mealId, mealOrder: index });
+    }
+    return mealId;
+  });
+}
+
+export async function deleteMeal(id: number): Promise<void> {
+  await db.transaction('rw', [db.meals, db.foodLogs], async () => {
+    await db.foodLogs.where('mealId').equals(id).delete();
+    await db.meals.delete(id);
+  });
+}
+
+export async function moveSnack(
+  id: number,
+  direction: 'earlier' | 'later',
+): Promise<Meal | undefined> {
+  const meal = await db.meals.get(id);
+  if (!meal || meal.category !== 'snack') return undefined;
+  const current = meal.snackSlot ?? 3;
+  const next = Math.max(0, Math.min(3, current + (direction === 'earlier' ? -1 : 1))) as
+    0 | 1 | 2 | 3;
+  if (next === current) return meal;
+  await saveMeal({
+    id,
+    date: meal.date,
+    name: meal.name,
+    category: meal.category,
+    snackSlot: next,
+    sortOrder: meal.sortOrder,
+  });
+  return { ...meal, snackSlot: next, updatedAt: Date.now() };
+}
+
+export async function placeSnack(id: number, slot: 0 | 1 | 2 | 3): Promise<void> {
+  const meal = await db.meals.get(id);
+  if (!meal || meal.category !== 'snack') return;
+  await saveMeal({
+    id,
+    date: meal.date,
+    name: meal.name,
+    category: 'snack',
+    snackSlot: slot,
+    sortOrder: meal.sortOrder,
+  });
 }
 
 /* -------------------------------------------------------------------------
@@ -301,23 +439,25 @@ export function countWorkoutPlans(): Promise<number> {
  * ---------------------------------------------------------------------- */
 
 export async function exportAll(): Promise<BackupFile> {
-  const [foods, foodLogs, bodyWeightLogs, settings, workoutPlans] = await Promise.all([
+  const [foods, foodLogs, bodyWeightLogs, settings, workoutPlans, meals] = await Promise.all([
     db.foods.toArray(),
     db.foodLogs.toArray(),
     db.bodyWeightLogs.toArray(),
     db.settings.get(SETTINGS_KEY),
     db.workoutPlans.toArray(),
+    db.meals.toArray(),
   ]);
 
   return {
     format: 'gymtracker-backup',
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     foods,
     foodLogs,
     bodyWeightLogs,
     settings: settings ?? null,
     workoutPlans,
+    meals,
   };
 }
 
@@ -330,7 +470,7 @@ export async function exportAll(): Promise<BackupFile> {
 export async function replaceAllData(backup: BackupFile): Promise<void> {
   await db.transaction(
     'rw',
-    [db.foods, db.foodLogs, db.bodyWeightLogs, db.settings, db.workoutPlans],
+    [db.foods, db.foodLogs, db.bodyWeightLogs, db.settings, db.workoutPlans, db.meals],
     async () => {
       await Promise.all([
         db.foods.clear(),
@@ -338,6 +478,7 @@ export async function replaceAllData(backup: BackupFile): Promise<void> {
         db.bodyWeightLogs.clear(),
         db.settings.clear(),
         db.workoutPlans.clear(),
+        db.meals.clear(),
       ]);
 
       if (backup.foods.length > 0) await db.foods.bulkAdd(backup.foods);
@@ -345,6 +486,7 @@ export async function replaceAllData(backup: BackupFile): Promise<void> {
       if (backup.bodyWeightLogs.length > 0) await db.bodyWeightLogs.bulkAdd(backup.bodyWeightLogs);
       if (backup.settings) await db.settings.put(backup.settings);
       if (backup.workoutPlans.length > 0) await db.workoutPlans.bulkAdd(backup.workoutPlans);
+      if (backup.meals.length > 0) await db.meals.bulkAdd(backup.meals);
     },
   );
 }
@@ -352,7 +494,7 @@ export async function replaceAllData(backup: BackupFile): Promise<void> {
 export async function clearAllData(): Promise<void> {
   await db.transaction(
     'rw',
-    [db.foods, db.foodLogs, db.bodyWeightLogs, db.settings, db.workoutPlans],
+    [db.foods, db.foodLogs, db.bodyWeightLogs, db.settings, db.workoutPlans, db.meals],
     async () => {
       await Promise.all([
         db.foods.clear(),
@@ -360,6 +502,7 @@ export async function clearAllData(): Promise<void> {
         db.bodyWeightLogs.clear(),
         db.settings.clear(),
         db.workoutPlans.clear(),
+        db.meals.clear(),
       ]);
     },
   );

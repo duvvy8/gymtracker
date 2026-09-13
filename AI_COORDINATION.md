@@ -2,6 +2,8 @@
 
 Read `AGENTS.md`, this file, `ANIMATION_GOAL_PROGRESS.md`, and `UPCOMING.md` before changing code. Historical feature work remains in `GYMTRACKER_GOAL_PROGRESS.md`; heatmap constraints remain in `COMPLETED.md` and `CHECKLIST.md`.
 
+The active Meals redesign and server-side Gemini meal-photo analysis goal is tracked in `MEALS_AI_GOAL_PROGRESS.md`. Read and update that task-specific handoff before changing Meals, nutrition, database, backup, privacy, HTTP, Worker, or Gemini integration code.
+
 ## Shared work rules
 
 - Run `git status` and inspect existing diffs before editing. Never overwrite another agent's active or uncommitted work.

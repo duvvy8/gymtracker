@@ -221,8 +221,9 @@ const v1 = parseBackup(
 );
 assert.equal(v1.ok, true);
 if (v1.ok) {
-  assert.equal(v1.value.version, 2);
+  assert.equal(v1.value.version, 3);
   assert.deepEqual(v1.value.workoutPlans, []);
+  assert.deepEqual(v1.value.meals, []);
 }
 
 const storedPlan = { ...first, id: 1, createdAt: 1, updatedAt: 1 };
@@ -238,7 +239,10 @@ const v2 = parseBackup(
   }),
 );
 assert.equal(v2.ok, true);
-if (v2.ok) assert.deepEqual(v2.value.workoutPlans, [storedPlan]);
+if (v2.ok) {
+  assert.deepEqual(v2.value.workoutPlans, [storedPlan]);
+  assert.deepEqual(v2.value.meals, []);
+}
 
 console.log(
   `Workout checks passed: ${MACHINES.length} lossless high-resolution machine images, ${EXERCISES.length} exercises, muscle heatmap coverage, mappings, planner, schemas, and backup compatibility.`,

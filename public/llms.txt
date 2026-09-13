@@ -3,8 +3,8 @@
 > A nutrition tracker and workout planner that runs in the visitor's browser.
 > Food entries, body weight readings, daily targets and workout programs are
 > stored in IndexedDB. There is no account, server-side personal-data storage or
-> analytics. The only third-party request is an optional barcode lookup against
-> Open Food Facts.
+> analytics. Optional barcode lookups use Open Food Facts. Optional meal-photo
+> analysis sends one transient image through a same-origin Worker to Google Gemini.
 
 ## Pages
 
@@ -14,7 +14,7 @@
 
 ## Notes
 
-- The personal application screens at /log, /programs, /history and /settings render no meaningful
+- The personal application screens at /meals, /programs, /history and /settings render no meaningful
   content without the visitor's own local database, so they are marked noindex
   and are not listed here.
 - Source code: https://github.com/duvvy8/gymtracker

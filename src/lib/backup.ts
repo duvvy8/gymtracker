@@ -5,11 +5,20 @@ import {
   describeIssue,
   foodLogSchema,
   foodSchema,
+  mealSchema,
   settingsSchema,
   workoutPlanSchema,
   type ParseResult,
 } from './validation.ts';
-import type { BackupFile, BodyWeightLog, Food, FoodLog, Settings, WorkoutPlan } from '../types';
+import type {
+  BackupFile,
+  BodyWeightLog,
+  Food,
+  FoodLog,
+  Meal,
+  Settings,
+  WorkoutPlan,
+} from '../types';
 
 /**
  * Export and import of the whole database.
@@ -92,7 +101,23 @@ const backupV2Schema = z.object({
   workoutPlans: z.array(workoutPlanSchema).max(LIMITS.importMaxRecordsPerTable),
 });
 
-const backupSchema = z.discriminatedUnion('version', [backupV1Schema, backupV2Schema]);
+const backupV3Schema = z.object({
+  format: z.literal('gymtracker-backup'),
+  version: z.literal(3),
+  exportedAt: z.string().max(64).optional(),
+  foods: z.array(foodSchema).max(LIMITS.importMaxRecordsPerTable),
+  foodLogs: z.array(foodLogSchema).max(LIMITS.importMaxRecordsPerTable),
+  bodyWeightLogs: z.array(bodyWeightLogSchema).max(LIMITS.importMaxRecordsPerTable),
+  settings: settingsSchema.nullish(),
+  workoutPlans: z.array(workoutPlanSchema).max(LIMITS.importMaxRecordsPerTable),
+  meals: z.array(mealSchema).max(LIMITS.importMaxRecordsPerTable),
+});
+
+const backupSchema = z.discriminatedUnion('version', [
+  backupV1Schema,
+  backupV2Schema,
+  backupV3Schema,
+]);
 
 type ValidatedBackup = z.infer<typeof backupSchema>;
 
@@ -120,6 +145,10 @@ function rebuildFood(input: ValidatedBackup['foods'][number]): Food {
   if (input.brand !== undefined) food.brand = input.brand;
   if (input.barcode !== undefined) food.barcode = input.barcode;
   if (input.servingGrams !== undefined) food.servingGrams = input.servingGrams;
+  if (input.fibre !== undefined) food.fibre = input.fibre;
+  if (input.sugars !== undefined) food.sugars = input.sugars;
+  if (input.saturatedFat !== undefined) food.saturatedFat = input.saturatedFat;
+  if (input.salt !== undefined) food.salt = input.salt;
   return food;
 }
 
@@ -140,7 +169,37 @@ function rebuildFoodLog(input: ValidatedBackup['foodLogs'][number]): FoodLog {
   if (input.id !== undefined) log.id = input.id;
   if (input.foodId !== undefined) log.foodId = input.foodId;
   if (input.brand !== undefined) log.brand = input.brand;
+  if (input.fibre !== undefined) log.fibre = input.fibre;
+  if (input.sugars !== undefined) log.sugars = input.sugars;
+  if (input.saturatedFat !== undefined) log.saturatedFat = input.saturatedFat;
+  if (input.salt !== undefined) log.salt = input.salt;
+  if (input.mealId !== undefined) log.mealId = input.mealId;
+  if (input.mealOrder !== undefined) log.mealOrder = input.mealOrder;
+  if (input.componentKind !== undefined) log.componentKind = input.componentKind;
+  if (input.preparation !== undefined) log.preparation = input.preparation;
+  if (input.portionConfidence !== undefined) log.portionConfidence = input.portionConfidence;
+  if (input.identityConfidence !== undefined) log.identityConfidence = input.identityConfidence;
+  if (input.uncertainty !== undefined) log.uncertainty = input.uncertainty;
+  if (input.nutritionSource !== undefined) log.nutritionSource = input.nutritionSource;
+  if (input.nutritionReference !== undefined) log.nutritionReference = input.nutritionReference;
+  if (input.nutritionBasis !== undefined) log.nutritionBasis = { ...input.nutritionBasis };
+  if (input.basisUnit !== undefined) log.basisUnit = input.basisUnit;
+  if (input.nutritionOverridden !== undefined) log.nutritionOverridden = input.nutritionOverridden;
   return log;
+}
+
+function rebuildMeal(input: Meal): Meal {
+  const meal: Meal = {
+    date: input.date,
+    name: input.name,
+    category: input.category,
+    sortOrder: input.sortOrder,
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt,
+  };
+  if (input.id !== undefined) meal.id = input.id;
+  if (input.snackSlot !== undefined) meal.snackSlot = input.snackSlot;
+  return meal;
 }
 
 function rebuildBodyWeight(input: ValidatedBackup['bodyWeightLogs'][number]): BodyWeightLog {
@@ -244,14 +303,15 @@ export function parseBackup(text: string): ParseResult<BackupFile> {
     ok: true,
     value: {
       format: 'gymtracker-backup',
-      version: 2,
+      version: 3,
       exportedAt: data.exportedAt ?? new Date().toISOString(),
       foods: data.foods.map(rebuildFood),
       foodLogs: data.foodLogs.map(rebuildFoodLog),
       bodyWeightLogs: data.bodyWeightLogs.map(rebuildBodyWeight),
       settings: data.settings ? rebuildSettings(data.settings) : null,
       workoutPlans:
-        data.version === 2 ? data.workoutPlans.map((plan) => rebuildWorkoutPlan(plan)) : [],
+        data.version === 1 ? [] : data.workoutPlans.map((plan) => rebuildWorkoutPlan(plan)),
+      meals: data.version === 3 ? data.meals.map(rebuildMeal) : [],
     },
   };
 }

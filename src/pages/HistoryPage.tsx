@@ -115,8 +115,8 @@ export function HistoryPage() {
               <EmptyState
                 title="Nothing logged in this period"
                 action={
-                  <LinkButton to="/log" variant="primary">
-                    Log food
+                  <LinkButton to="/meals" variant="primary">
+                    Add meal
                   </LinkButton>
                 }
               >

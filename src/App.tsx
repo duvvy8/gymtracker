@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { TodayPage } from './pages/TodayPage';
+import { MealsPage } from './pages/MealsPage';
 import { LogFoodPage } from './pages/LogFoodPage';
 
 /**
@@ -69,7 +70,9 @@ export function App() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={pageContent(<TodayPage />)} />
-        <Route path="log" element={pageContent(<LogFoodPage />)} />
+        <Route path="meals" element={pageContent(<MealsPage />)} />
+        <Route path="foods" element={pageContent(<LogFoodPage />)} />
+        <Route path="log" element={<Navigate to="/meals" replace />} />
         <Route path="history" element={lazyRoute(<HistoryPage />)} />
         <Route path="programs" element={lazyRoute(<ProgramsPage />)} />
         <Route path="machines" element={lazyRoute(<MachinesPage />)} />

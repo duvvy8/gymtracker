@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { BodyWeightLog, Food, FoodLog, Settings, WorkoutPlan } from '../types';
+import type { BodyWeightLog, Food, FoodLog, Meal, Settings, WorkoutPlan } from '../types';
 
 export const DATABASE_NAME = 'gymtracker';
 
@@ -30,6 +30,7 @@ export class GymTrackerDatabase extends Dexie {
   bodyWeightLogs!: Table<BodyWeightLog, number>;
   settings!: Table<Settings, string>;
   workoutPlans!: Table<WorkoutPlan, number>;
+  meals!: Table<Meal, number>;
 
   constructor() {
     super(DATABASE_NAME);
@@ -49,6 +50,17 @@ export class GymTrackerDatabase extends Dexie {
       bodyWeightLogs: '++id, &date',
       settings: 'id',
       workoutPlans: '++id, creationMode, updatedAt',
+    });
+
+    // Meals add grouping metadata while historical flat food-log rows remain
+    // untouched and continue to count toward daily totals.
+    this.version(3).stores({
+      foods: '++id, nameLower, barcode, updatedAt',
+      foodLogs: '++id, date, foodId, mealId, createdAt',
+      bodyWeightLogs: '++id, &date',
+      settings: 'id',
+      workoutPlans: '++id, creationMode, updatedAt',
+      meals: '++id, date, category, [date+category], createdAt',
     });
   }
 }

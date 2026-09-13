@@ -19,6 +19,7 @@ export function FoodLogList({
   onEdit,
   onDeleted,
   emptyAction,
+  hideEmpty = false,
 }: {
   logs: FoodLog[];
   /** True until the query resolves, so "empty" is never shown for "not yet known". */
@@ -26,6 +27,7 @@ export function FoodLogList({
   onEdit: (log: FoodLog) => void;
   onDeleted: (message: string) => void;
   emptyAction?: React.ReactNode;
+  hideEmpty?: boolean;
 }) {
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -40,6 +42,7 @@ export function FoodLogList({
   }
 
   if (logs.length === 0) {
+    if (hideEmpty) return null;
     return (
       <EmptyState title="Nothing logged yet" action={emptyAction}>
         Start with a recent food, search your saved foods, or scan a barcode. Entries appear here

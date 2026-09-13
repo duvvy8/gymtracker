@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { getSettings, listLogsForDate, recentFoods, saveFoodLog } from '../db/queries';
+import {
+  getSettings,
+  listLogsForDate,
+  listMealBundlesForDate,
+  recentFoods,
+  saveFoodLog,
+} from '../db/queries';
 import { describeDate, formatFullDate } from '../lib/date';
 import { isValidationError } from '../lib/validation';
 import { formatCalories, scaleFood, sumMacros } from '../lib/nutrition';
@@ -10,6 +16,7 @@ import { DailySummary } from '../components/DailySummary';
 import { DateStepper } from '../components/DateStepper';
 import { FoodLogList } from '../components/FoodLogList';
 import { LogEntryDialog } from '../components/LogEntryDialog';
+import { MealSummaryList } from '../components/MealSummaryList';
 import { Card, CardHeader, EmptyState, LinkButton, PageHeader } from '../components/ui';
 import type { Food, FoodLog } from '../types';
 
@@ -30,12 +37,14 @@ export function TodayPage() {
 
   const settings = useLiveQuery(() => getSettings(), []);
   const logs = useLiveQuery(() => listLogsForDate(selectedDate), [selectedDate]);
+  const meals = useLiveQuery(() => listMealBundlesForDate(selectedDate), [selectedDate]);
   const recent = useLiveQuery(() => recentFoods(8), []);
 
   const totals = sumMacros(logs ?? []);
   const heading = describeDate(selectedDate);
   const fullDate = formatFullDate(selectedDate);
   const hasFoods = (recent?.length ?? 0) > 0;
+  const legacyLogs = (logs ?? []).filter((entry) => entry.mealId === undefined);
 
   /**
    * One tap logs a whole serving. The entry appears in the list below
@@ -96,8 +105,8 @@ export function TodayPage() {
             description={hasFoods ? 'One tap logs a serving' : undefined}
             actions={
               hasFoods ? (
-                <LinkButton to={ROUTES.log.path} variant="primary">
-                  Log food
+                <LinkButton to={ROUTES.meals.path} variant="primary">
+                  Add meal
                 </LinkButton>
               ) : undefined
             }
@@ -132,7 +141,7 @@ export function TodayPage() {
             <EmptyState
               title="No saved foods yet"
               action={
-                <LinkButton to={ROUTES.log.path} variant="primary">
+                <LinkButton to={ROUTES.meals.path} variant="primary">
                   Add your first food
                 </LinkButton>
               }
@@ -146,7 +155,7 @@ export function TodayPage() {
         {hasFoods || logs === undefined || logs.length > 0 ? (
           <Card>
             <CardHeader
-              title="Entries"
+              title="Meals and entries"
               description={
                 logs && logs.length > 0
                   ? `${logs.length} ${logs.length === 1 ? 'entry' : 'entries'} on this day`
@@ -160,14 +169,16 @@ export function TodayPage() {
                 ) : undefined
               }
             />
+            {meals && meals.length > 0 ? <MealSummaryList meals={meals} /> : null}
             <FoodLogList
-              logs={logs ?? []}
-              loading={logs === undefined}
+              logs={legacyLogs}
+              loading={logs === undefined || meals === undefined}
+              hideEmpty={(meals?.length ?? 0) > 0}
               onEdit={(log) => setSubject({ log })}
               onDeleted={(message) => showNotice(message)}
               emptyAction={
-                <LinkButton to={ROUTES.log.path} variant="primary">
-                  Log food
+                <LinkButton to={ROUTES.meals.path} variant="primary">
+                  Add meal
                 </LinkButton>
               }
             />

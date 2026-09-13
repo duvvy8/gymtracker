@@ -165,17 +165,50 @@ export const foodSchema = z.object({
   protein: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
   carbs: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
   fat: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+  fibre: boundedNumber(LIMITS.macroMin, LIMITS.macroMax).optional(),
+  sugars: boundedNumber(LIMITS.macroMin, LIMITS.macroMax).optional(),
+  saturatedFat: boundedNumber(LIMITS.macroMin, LIMITS.macroMax).optional(),
+  salt: boundedNumber(LIMITS.macroMin, LIMITS.macroMax).optional(),
   nameLower: z.string().max(LIMITS.nameMaxLength),
   createdAt: finiteNumber.int().nonnegative(),
   updatedAt: finiteNumber.int().nonnegative(),
 });
+
+export const nutrientSchema = z
+  .object({
+    calories: boundedNumber(LIMITS.caloriesMin, LIMITS.caloriesMax),
+    protein: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+    carbs: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+    fat: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+    fibre: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+    sugars: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+    saturatedFat: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+    salt: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+  })
+  .strict();
+
+export const mealSchema = z
+  .object({
+    id: z.number().int().positive().optional(),
+    date: isoDateSchema,
+    name: boundedText(LIMITS.nameMaxLength).pipe(z.string().min(1, 'Meal name is required')),
+    category: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+    snackSlot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]).optional(),
+    sortOrder: finiteNumber.int().nonnegative(),
+    createdAt: finiteNumber.int().nonnegative(),
+    updatedAt: finiteNumber.int().nonnegative(),
+  })
+  .refine((meal) => meal.category === 'snack' || meal.snackSlot === undefined, {
+    path: ['snackSlot'],
+    message: 'Only snacks can have a snack position',
+  });
 
 export const foodLogSchema = z.object({
   id: z.number().int().positive().optional(),
   date: isoDateSchema,
   foodId: z.number().int().positive().optional(),
   amount: boundedNumber(LIMITS.amountServingsMin, LIMITS.amountGramsMax),
-  unit: z.enum(['g', 'serving']),
+  unit: z.enum(['g', 'ml', 'serving']),
   name: boundedText(LIMITS.nameMaxLength).pipe(z.string().min(1)),
   brand: boundedText(LIMITS.brandMaxLength).optional(),
   servingLabel: boundedText(LIMITS.servingLabelMaxLength),
@@ -183,6 +216,22 @@ export const foodLogSchema = z.object({
   protein: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
   carbs: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
   fat: boundedNumber(LIMITS.macroMin, LIMITS.macroMax),
+  fibre: boundedNumber(LIMITS.macroMin, LIMITS.macroMax).optional(),
+  sugars: boundedNumber(LIMITS.macroMin, LIMITS.macroMax).optional(),
+  saturatedFat: boundedNumber(LIMITS.macroMin, LIMITS.macroMax).optional(),
+  salt: boundedNumber(LIMITS.macroMin, LIMITS.macroMax).optional(),
+  mealId: z.number().int().positive().optional(),
+  mealOrder: finiteNumber.int().nonnegative().max(LIMITS.mealComponentsMax).optional(),
+  componentKind: z.enum(['food', 'drink']).optional(),
+  preparation: boundedText(LIMITS.servingLabelMaxLength).optional(),
+  portionConfidence: z.enum(['high', 'medium', 'low']).optional(),
+  identityConfidence: z.enum(['high', 'medium', 'low']).optional(),
+  uncertainty: boundedText(LIMITS.uncertaintyMaxLength).optional(),
+  nutritionSource: z.enum(['cofid', 'ai-estimate', 'saved-food', 'barcode', 'manual']).optional(),
+  nutritionReference: boundedText(LIMITS.servingLabelMaxLength).optional(),
+  nutritionBasis: nutrientSchema.optional(),
+  basisUnit: z.enum(['100g', '100ml', 'serving']).optional(),
+  nutritionOverridden: z.boolean().optional(),
   createdAt: finiteNumber.int().nonnegative(),
   updatedAt: finiteNumber.int().nonnegative(),
 });
@@ -302,6 +351,12 @@ const FIELD_LABELS: Record<string, string> = {
   fat: 'Fat',
   fatTarget: 'Fat target',
   name: 'Name',
+  mealId: 'Meal',
+  snackSlot: 'Snack position',
+  fibre: 'Fibre',
+  sugars: 'Sugars',
+  saturatedFat: 'Saturated fat',
+  salt: 'Salt',
   protein: 'Protein',
   proteinTarget: 'Protein target',
   servingGrams: 'Serving weight',

@@ -30,7 +30,7 @@ export function NotFoundPage() {
           <LinkButton to={ROUTES.today.path} variant="primary">
             Go to Today
           </LinkButton>
-          <LinkButton to={ROUTES.log.path}>Log food</LinkButton>
+          <LinkButton to={ROUTES.meals.path}>Meals</LinkButton>
           <LinkButton to={ROUTES.history.path}>History</LinkButton>
         </div>
       </Card>

@@ -90,8 +90,8 @@ export function MobileMenu({
 
       <div className="shrink-0 border-t border-line px-4 py-4">
         <p className="text-sm text-ink-3">
-          Your food log and workout programs stay in this browser. Barcode lookups use Open Food
-          Facts.
+          Saved data stays in this browser. Optional barcode lookups use Open Food Facts; meal
+          photos are sent to Gemini only when you press Analyse.
         </p>
       </div>
     </dialog>
