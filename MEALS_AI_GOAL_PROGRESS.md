@@ -19,7 +19,7 @@
 - **Local secret configured:** yes (presence and shape checked only; the value was never printed, logged or written to any file)
 - **Production secret configured:** yes. Uploaded to the `gymtracker` Worker with `wrangler secret bulk .dev.vars` and confirmed via `wrangler secret list` as `GEMINI_API_KEY` of type `secret_text`. Encrypted at rest; the value is not retrievable.
 - **Local validation status:** green. `check:all` (9 suites, 31 Meals checks, 5 secret-hygiene checks) and the production build pass as of this update.
-- **Production deployment status:** deployed to https://gymtracker.kucera.uk, Cloudflare version `9967978b-c943-47df-975b-980d5dae0a7f`. Commit `0cf2365` is pushed to `origin/main`.
+- **Production deployment status:** deployed to https://gymtracker.kucera.uk, Cloudflare version `87d9e371-9d06-4e09-8342-833b7d704ade`.
 
 ## Official documentation verification (goal section A.4 / A.5)
 
@@ -107,7 +107,7 @@ Note: the `generateContent` endpoint is now labelled "Legacy" against a newer In
 
 ## G. AI image UI
 
-- [x] Native `<input type="file" accept="image/*">`; no faked iOS sheet; camera is not forced.
+- [x] Native `<input type="file" accept="image/*">`; no faked iOS sheet; camera is not forced. **Corrected after user report:** the input shipped with an explicit MIME list, so iOS Safari offered only the Files browser with no Take Photo or Photo Library option, and iPhone HEIC camera-roll photos were excluded outright. Image preparation now accepts anything the platform reports as an image and decodes with EXIF orientation applied, still re-encoding to JPEG.
 - [x] One photo per meal.
 - [x] Concise whole-meal framing hint.
 - [x] Local preview with replace and remove; object URLs revoked.
@@ -277,3 +277,8 @@ Recorded so no future agent reopens them by accident.
   - API boundaries live: GET 405, unknown `/api/*` 404, header-less POST 403, cross-origin POST 403, `Cache-Control: no-store` present.
   - End-to-end analysis confirmed in production through the Cloudflare encrypted secret, returning the correct structured result. The secret survived deployment.
   - Remaining: judge decomposition and portion accuracy on real meal photographs. Everything else in the goal is complete.
+- **2026-09-13 18:21 BST (Claude, photo picker fix):** The user reported that no photo prompt appeared on mobile.
+  - Cause: the input shipped `accept="image/jpeg,image/png,image/webp,image/gif"` rather than the `image/*` the goal specified. iOS Safari treats a narrow accept list as a Files-only picker, so Take Photo and Photo Library never appeared. Compounding it, iPhone camera-roll photos are HEIC, which that list excluded, so even a successful pick would have been rejected by `prepareMealImage`.
+  - Fixed: `accept="image/*"` with no `capture`, so the camera is offered but never forced. Preparation now accepts any platform-reported image type and lets decoding be the gate, still re-encoding to JPEG for the Worker's signature check.
+  - Also decodes with `imageOrientation: 'from-image'`, so an EXIF-rotated phone photo is no longer analysed sideways.
+  - 16 of 16 browser checks and `check:all` still green. Verified live: the production bundle contains `image/*` and no longer contains the restrictive list. No service worker exists, so no stale cache can mask the fix.
