@@ -13,7 +13,7 @@
 - **Exact next task:** Judge analysis quality on real meal photographs across the goal's test categories (separated meal, mixed dish, breakfast, ambiguous food, visible sauce/oil, meal with drink). Then rerun the isolated browser QA, provision production with `npx wrangler secret bulk .dev.vars`, publish on authorisation, and verify production.
 - **Known blockers:** Needs real meal photographs from the user to judge decomposition and portion accuracy; a gym-machine fixture only exercises the no-food path. Publication still requires the user's explicit authorisation.
 - **Known UI issues:** None outstanding. Two were found and fixed (see I below): low-confidence items previously required editing the AI's confidence label to clear them, and manual nutrition edits were stored per-100 rather than as confirmed item totals.
-- **Known AI/API issues:** The free tier returns transient 503 UNAVAILABLE fairly often — 3 of 8 observed calls. This is now surfaced as a distinct retryable state rather than a hard failure. No automatic retry was added, per the goal's instruction not to burn quota.
+- **Known AI/API issues:** **The free tier allows only 20 requests per day for `gemini-3.8-flash`** (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`, limit 20, confirmed from the live 429 body). This is the binding operational constraint on the whole feature and needs a decision — see Open questions. Transient 503 UNAVAILABLE is also frequent; the Worker now retries it once, which is quota-neutral compared with the user pressing Analyse again.
 - **Gemini model currently selected:** `gemini-3.8-flash`, `thinkingConfig.thinkingLevel: MEDIUM`, one structured multimodal `generateContent` request, no tools, no Search grounding
 - **Gemini API status:** Verified working. Auth, image input, `responseSchema` structured output and `thinkingConfig.thinkingLevel: MEDIUM` all confirmed against the live endpoint using the Worker's exact request body.
 - **Local secret configured:** yes (presence and shape checked only; the value was never printed, logged or written to any file)
@@ -216,6 +216,34 @@ Note: the `generateContent` endpoint is now labelled "Legacy" against a newer In
 - [x] Deployment state documented: Cloudflare version `9967978b-c943-47df-975b-980d5dae0a7f`, commit `0cf2365` on `origin/main`.
 - [ ] Mark the goal complete only after the real provider run, full revalidation, publication and production verification genuinely finish.
 
+## Open question: free-tier daily quota
+
+The live 429 body is explicit:
+
+```
+Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests
+limit: 20, model: gemini-3.8-flash
+quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier
+```
+
+**Twenty analyses per day, per model, on the free tier.** The goal requires the
+system to stay usable on the free tier, and 20 per day is tight for a food
+tracker used at every meal, especially with any retrying or experimentation.
+
+Options, none yet chosen by the user:
+
+1. Accept 20 per day. Roughly three or four meals daily with no room for error.
+   Costs nothing and needs no change; the app already degrades cleanly to
+   barcode, saved foods and manual entry when quota is gone.
+2. Move to a lighter free Flash-class model with a higher daily allowance. The
+   provider boundary is already isolated in the Worker, so this is a one-line
+   model change plus revalidation. Google no longer publishes per-model free
+   limits in its docs; they are visible per account at https://ai.dev/rate-limit.
+3. Keep `gemini-3.8-flash` for quality and fall back to a lighter model only
+   after a quota failure. More code, and it would need its own error states.
+
+Deliberately not an option under the current goal: enabling billing.
+
 ## Deliberate decisions, not pending work
 
 Recorded so no future agent reopens them by accident.
@@ -282,3 +310,8 @@ Recorded so no future agent reopens them by accident.
   - Fixed: `accept="image/*"` with no `capture`, so the camera is offered but never forced. Preparation now accepts any platform-reported image type and lets decoding be the gate, still re-encoding to JPEG for the Worker's signature check.
   - Also decodes with `imageOrientation: 'from-image'`, so an EXIF-rotated phone photo is no longer analysed sideways.
   - 16 of 16 browser checks and `check:all` still green. Verified live: the production bundle contains `image/*` and no longer contains the restrictive list. No service worker exists, so no stale cache can mask the fix.
+- **2026-09-13 18:33 BST (Claude, quota discovery and retry):** The user reported an analysis failing with the busy message on a real photo.
+  - Cause was a genuine upstream 503 from Google, not anything the user did. The wording implied otherwise, so it now says plainly that Google's service is overloaded and that the photo is still there to retry. Verified in code: a failed analysis keeps the photo and sets no cooldown, so pressing Analyse again immediately works.
+  - The Worker now retries a transient 5xx exactly once, after 700 ms, and never retries a 4xx or a 429. This is quota-neutral compared with the user pressing Analyse again, and turns the common transient failure into an invisible one.
+  - While measuring the improvement, every call began returning 429. The cause is the free-tier cap of 20 requests per day for this model, recorded above as an open question. Verification during this session consumed most of today's allowance, so real-photo accuracy testing must wait for the daily reset.
+  - `check:meals` extended to 33 checks covering retry-once, transient-then-success, and never-retry-on-4xx. `check:all` green.

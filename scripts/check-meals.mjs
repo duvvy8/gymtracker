@@ -326,11 +326,40 @@ try {
   assert.equal((await response.json()).error, 'no-food-detected');
   checks++;
   // A transient upstream 5xx is retryable and must stay distinct from a hard failure.
-  globalThis.fetch = async () => new Response('{}', { status: 503 });
+  let unavailableCalls = 0;
+  globalThis.fetch = async () => {
+    unavailableCalls += 1;
+    return new Response('{}', { status: 503 });
+  };
   response = await worker.fetch(request(), env);
   assert.equal(response.status, 503);
   assert.equal((await response.json()).error, 'analysis-unavailable');
   assert.equal(response.headers.get('retry-after'), '30');
+  // Retried once and then given up on, never more.
+  assert.equal(unavailableCalls, 2);
+  checks++;
+  // A transient failure followed by success must be invisible to the user.
+  let flakyCalls = 0;
+  globalThis.fetch = async () => {
+    flakyCalls += 1;
+    if (flakyCalls === 1) return new Response('{}', { status: 503 });
+    return Response.json({
+      candidates: [{ content: { parts: [{ text: JSON.stringify(modelMeal) }] } }],
+    });
+  };
+  response = await worker.fetch(request(), env);
+  assert.equal(response.status, 200);
+  assert.equal(flakyCalls, 2);
+  checks++;
+  // A 4xx is a real rejection and must never be retried.
+  let badRequestCalls = 0;
+  globalThis.fetch = async () => {
+    badRequestCalls += 1;
+    return new Response('{}', { status: 400 });
+  };
+  response = await worker.fetch(request(), env);
+  assert.equal(response.status, 502);
+  assert.equal(badRequestCalls, 1);
   checks++;
   const originalSetTimeout = globalThis.setTimeout;
   try {

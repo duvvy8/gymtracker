@@ -197,12 +197,17 @@ export async function postMealImage(image: Blob, signal?: AbortSignal): Promise<
         );
       }
       if (response.status === 429) {
-        throw new HttpError('rate-limited', 'Meal analysis is busy. Wait a minute and try again.');
+        throw new HttpError(
+          'rate-limited',
+          'That is a few analyses in quick succession. Wait a minute and try again.',
+        );
       }
       if (code === 'analysis-unavailable') {
+        // Not the user's doing and not their quota: Google's model is overloaded.
+        // Say so plainly rather than implying they did something wrong.
         throw new HttpError(
           'unavailable',
-          'Meal analysis is busy right now. Try again shortly, or add the meal manually.',
+          "Google's AI service is overloaded right now. Your photo is still here, so press Analyse again in a moment, or add the meal manually.",
         );
       }
       if (response.status === 503) {
