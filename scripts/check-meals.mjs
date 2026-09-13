@@ -7,7 +7,7 @@ import {
   resolveCofid,
 } from '../src/lib/mealAnalysis.ts';
 import { scaleNutrients, sumNutrients } from '../src/lib/nutrition.ts';
-import { mealSchema } from '../src/lib/validation.ts';
+import { mealSchema, settingsSchema } from '../src/lib/validation.ts';
 import worker from '../worker/index.ts';
 
 let checks = 0;
@@ -218,6 +218,48 @@ const v3 = parseBackup(
 assert.equal(v3.ok, true);
 checks++;
 
+// Settings carry the chosen model, and reject anything not on the allow-list.
+assert.equal(
+  settingsSchema.safeParse({
+    id: 'settings',
+    calorieTarget: 2000,
+    proteinTarget: 150,
+    carbTarget: 200,
+    fatTarget: 70,
+    weightUnit: 'kg',
+    mealModel: 'gemini-3.5-flash-lite',
+    updatedAt: 1,
+  }).success,
+  true,
+);
+assert.equal(
+  settingsSchema.safeParse({
+    id: 'settings',
+    calorieTarget: 2000,
+    proteinTarget: 150,
+    carbTarget: 200,
+    fatTarget: 70,
+    weightUnit: 'kg',
+    mealModel: 'not-a-model',
+    updatedAt: 1,
+  }).success,
+  false,
+);
+// A settings row written before the picker existed must still parse.
+assert.equal(
+  settingsSchema.safeParse({
+    id: 'settings',
+    calorieTarget: 2000,
+    proteinTarget: 150,
+    carbTarget: 200,
+    fatTarget: 70,
+    weightUnit: 'kg',
+    updatedAt: 1,
+  }).success,
+  true,
+);
+checks++;
+
 const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0]);
 const request = (headers = {}, body = png) =>
   new Request('https://gymtracker.test/api/analyse-meal', {
@@ -350,6 +392,28 @@ try {
   response = await worker.fetch(request(), env);
   assert.equal(response.status, 200);
   assert.equal(flakyCalls, 2);
+  checks++;
+  // The browser may ask for a model, but only from the allow-list.
+  let requestedUrl = '';
+  globalThis.fetch = async (url) => {
+    requestedUrl = String(url);
+    return Response.json({
+      candidates: [{ content: { parts: [{ text: JSON.stringify(modelMeal) }] } }],
+    });
+  };
+  response = await worker.fetch(request({ 'x-meal-model': 'gemini-3.5-flash-lite' }), env);
+  assert.equal(response.status, 200);
+  assert.ok(requestedUrl.includes('gemini-3.5-flash-lite'), requestedUrl);
+  checks++;
+  // Anything outside the allow-list falls back to the default and is never
+  // interpolated into the provider URL.
+  for (const hostile of ['../../evil', 'gemini-3.0-pro', 'https://evil.test/x', '']) {
+    requestedUrl = '';
+    response = await worker.fetch(request({ 'x-meal-model': hostile }), env);
+    assert.equal(response.status, 200);
+    assert.ok(requestedUrl.includes('gemini-3.8-flash'), requestedUrl);
+    assert.equal(requestedUrl.includes('evil'), false);
+  }
   checks++;
   // A 4xx is a real rejection and must never be retried.
   let badRequestCalls = 0;

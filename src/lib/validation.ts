@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { LIMITS } from './limits.ts';
+import { MEAL_MODELS, type MealModelId } from './mealModels.ts';
 
 /* -------------------------------------------------------------------------
  * Primitives
@@ -244,6 +245,11 @@ export const bodyWeightLogSchema = z.object({
   updatedAt: finiteNumber.int().nonnegative(),
 });
 
+const MEAL_MODEL_IDS = MEAL_MODELS.map((model) => model.id) as unknown as [
+  MealModelId,
+  ...MealModelId[],
+];
+
 export const settingsSchema = z.object({
   id: z.string().min(1).max(32),
   calorieTarget: boundedNumber(LIMITS.calorieTargetMin, LIMITS.calorieTargetMax),
@@ -251,6 +257,8 @@ export const settingsSchema = z.object({
   carbTarget: boundedNumber(LIMITS.macroTargetMin, LIMITS.macroTargetMax),
   fatTarget: boundedNumber(LIMITS.macroTargetMin, LIMITS.macroTargetMax),
   weightUnit: z.enum(['kg', 'lb']),
+  // Optional so rows and backups written before the model picker still parse.
+  mealModel: z.enum(MEAL_MODEL_IDS).optional(),
   updatedAt: finiteNumber.int().nonnegative(),
 });
 

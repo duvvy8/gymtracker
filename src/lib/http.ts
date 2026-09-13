@@ -13,6 +13,8 @@
  */
 
 /** Every origin this application may contact. Nothing else is reachable. */
+import { DEFAULT_MEAL_MODEL, MEAL_MODEL_HEADER, type MealModelId } from './mealModels.ts';
+
 const ALLOWED_ORIGINS: readonly string[] = ['https://world.openfoodfacts.org'];
 
 /** Refuse to buffer a response larger than this. */
@@ -154,7 +156,11 @@ export async function getJson(
 }
 
 /** Sends one processed image to the same-origin meal-analysis Worker. */
-export async function postMealImage(image: Blob, signal?: AbortSignal): Promise<unknown> {
+export async function postMealImage(
+  image: Blob,
+  signal?: AbortSignal,
+  model: MealModelId = DEFAULT_MEAL_MODEL,
+): Promise<unknown> {
   const controller = new AbortController();
   const timeout = globalThis.setTimeout(() => controller.abort(), 35_000);
   const abortFromCaller = () => controller.abort();
@@ -165,7 +171,13 @@ export async function postMealImage(image: Blob, signal?: AbortSignal): Promise<
       method: 'POST',
       body: image,
       signal: controller.signal,
-      headers: { 'Content-Type': image.type, Accept: 'application/json' },
+      headers: {
+        'Content-Type': image.type,
+        Accept: 'application/json',
+        // A request, not an instruction: the Worker re-validates this against
+        // its own allow-list and falls back to the default.
+        [MEAL_MODEL_HEADER]: model,
+      },
       credentials: 'same-origin',
       cache: 'no-store',
       redirect: 'error',

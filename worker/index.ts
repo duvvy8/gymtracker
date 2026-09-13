@@ -1,4 +1,5 @@
 import { analysedMealSchema, resolveAnalysedMeal } from '../src/lib/mealAnalysis.ts';
+import { MEAL_MODEL_HEADER, resolveMealModel, type MealModelId } from '../src/lib/mealModels.ts';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_PROVIDER_BYTES = 256 * 1024;
@@ -142,7 +143,7 @@ const GEMINI_SCHEMA = {
   },
 } as const;
 
-async function analyseWithGemini(image: Uint8Array, mime: string, key: string) {
+async function analyseWithGemini(image: Uint8Array, mime: string, key: string, model: MealModelId) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
   try {
@@ -181,7 +182,8 @@ async function analyseWithGemini(image: Uint8Array, mime: string, key: string) {
     let response: Response | undefined;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+        // model is already narrowed to the allow-list, never raw client input.
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
           method: 'POST',
           signal: controller.signal,
@@ -260,7 +262,8 @@ async function handleAnalysis(request: Request, env: WorkerEnv): Promise<Respons
   if (!validSignature(bytes, mime)) return json(400, { error: 'invalid-image' });
 
   try {
-    const analysis = await analyseWithGemini(bytes, mime, env.GEMINI_API_KEY);
+    const model = resolveMealModel(request.headers.get(MEAL_MODEL_HEADER));
+    const analysis = await analyseWithGemini(bytes, mime, env.GEMINI_API_KEY, model);
     return json(200, resolveAnalysedMeal(analysis));
   } catch (cause) {
     if (cause instanceof Error && cause.name === 'AbortError')

@@ -1,11 +1,18 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { findFoodByBarcode, saveMealWithComponents, searchFoods } from '../db/queries';
+import {
+  findFoodByBarcode,
+  getSettings,
+  saveMealWithComponents,
+  saveSettings,
+  searchFoods,
+} from '../db/queries';
 import { EMPTY_FOOD_FORM, type FoodFormValues } from '../lib/foodFormValues';
 import { postMealImage, HttpError } from '../lib/http';
 import { prepareMealImage } from '../lib/imagePrep';
 import { mealAnalysisResponseSchema, resolveCofid } from '../lib/mealAnalysis';
+import { MEAL_MODELS, resolveMealModel, type MealModelId } from '../lib/mealModels.ts';
 import { lookupBarcode } from '../lib/openFoodFacts';
 import { nutrientsFromFood, scaleNutrients, sumNutrients } from '../lib/nutrition';
 import { isValidationError } from '../lib/validation';
@@ -486,6 +493,25 @@ export function AddMealDialog({
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const controller = useRef<AbortController | null>(null);
   const photoInput = useRef<HTMLInputElement | null>(null);
+  const settings = useLiveQuery(() => getSettings(), []);
+  // Held locally as well so the control responds immediately rather than
+  // waiting for the write to come back through the live query.
+  const [modelChoice, setModelChoice] = useState<MealModelId | null>(null);
+  const mealModel = modelChoice ?? resolveMealModel(settings?.mealModel);
+
+  async function chooseModel(value: string) {
+    const next = resolveMealModel(value);
+    setModelChoice(next);
+    if (!settings) return;
+    await saveSettings({
+      calorieTarget: settings.calorieTarget,
+      proteinTarget: settings.proteinTarget,
+      carbTarget: settings.carbTarget,
+      fatTarget: settings.fatTarget,
+      weightUnit: settings.weightUnit,
+      mealModel: next,
+    });
+  }
   const foods = useLiveQuery(() => searchFoods(term, 12), [term]);
   const totals = useMemo(
     () =>
@@ -549,7 +575,7 @@ export function AddMealDialog({
     setError(undefined);
     try {
       const parsed = mealAnalysisResponseSchema.parse(
-        await postMealImage(photo.blob, nextController.signal),
+        await postMealImage(photo.blob, nextController.signal, mealModel),
       );
       setName(parsed.suggestedName);
       setComponents(
@@ -895,6 +921,27 @@ export function AddMealDialog({
                   {photo && !category ? (
                     <p className="mt-2 text-sm text-ink-3">Choose a meal type before analysis.</p>
                   ) : null}
+                  <Field label="Analysis model" className="mt-4 max-w-xs">
+                    {({ id }) => (
+                      <Select
+                        id={id}
+                        value={mealModel}
+                        disabled={busy}
+                        onChange={(event) => void chooseModel(event.target.value)}
+                      >
+                        {MEAL_MODELS.map((model) => (
+                          <option key={model.id} value={model.id}>
+                            {model.label}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                  <p className="mt-1 text-xs text-ink-3">
+                    {MEAL_MODELS.find((model) => model.id === mealModel)?.note} Each model has its
+                    own daily free allowance, so switching gives you more analyses once one is used
+                    up.
+                  </p>
                   {busy ? (
                     <p role="status" className="mt-3 text-sm text-ink-2">
                       Identifying foods and estimating portions. This can take a few moments.

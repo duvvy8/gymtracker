@@ -1,3 +1,4 @@
+import type { MealModelId } from '../lib/mealModels.ts';
 /** A calendar date in the user's local timezone, formatted YYYY-MM-DD. */
 export type IsoDate = string;
 
@@ -122,6 +123,8 @@ export interface Settings {
   carbTarget: number;
   fatTarget: number;
   weightUnit: WeightUnit;
+  /** Which Gemini model analyses meal photos. Absent means the default. */
+  mealModel?: MealModelId;
   updatedAt: number;
 }
 
