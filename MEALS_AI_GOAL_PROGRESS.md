@@ -7,7 +7,7 @@
 - **Branch:** `main`
 - **Latest relevant commit:** `e051c6f` (baseline; all Meals/AI work below is uncommitted)
 - **Working tree state:** Meals/Worker/data/docs/test changes uncommitted. Ignored browser evidence in `.animation-evidence/`. This handoff is staged so it is tracked in Git as the goal requires.
-- **Current phase:** Real Gemini secret and provider verification checkpoint
+- **Current phase:** Published. Remaining work is accuracy judgement on real meal photographs.
 - **Current files being modified:** none in flight; last touched `worker/index.ts`, `src/lib/mealAnalysis.ts`, `scripts/check-meals.mjs`, `.animation-evidence/meals-qa.cjs`
 - **Last completed task:** First real Gemini calls made. The corrected request shape is accepted by the live API. Two error states the goal requires but that collapsed into a generic failure — no food detected, and transient upstream unavailability — are now distinct and verified end to end.
 - **Exact next task:** Judge analysis quality on real meal photographs across the goal's test categories (separated meal, mixed dish, breakfast, ambiguous food, visible sauce/oil, meal with drink). Then rerun the isolated browser QA, provision production with `npx wrangler secret bulk .dev.vars`, publish on authorisation, and verify production.
@@ -19,7 +19,7 @@
 - **Local secret configured:** yes (presence and shape checked only; the value was never printed, logged or written to any file)
 - **Production secret configured:** yes. Uploaded to the `gymtracker` Worker with `wrangler secret bulk .dev.vars` and confirmed via `wrangler secret list` as `GEMINI_API_KEY` of type `secret_text`. Encrypted at rest; the value is not retrievable.
 - **Local validation status:** green. `check:all` (9 suites, 31 Meals checks, 5 secret-hygiene checks) and the production build pass as of this update.
-- **Production deployment status:** not started
+- **Production deployment status:** deployed to https://gymtracker.kucera.uk, Cloudflare version `9967978b-c943-47df-975b-980d5dae0a7f`. Commit `0cf2365` is pushed to `origin/main`.
 
 ## Official documentation verification (goal section A.4 / A.5)
 
@@ -213,7 +213,7 @@ Note: the `generateContent` endpoint is now labelled "Legacy" against a newer In
 - [x] No debug logging.
 - [x] Progress document accurate — restored to the goal's mandated Session state block and A–O structure.
 - [x] Exact remaining task documented.
-- [ ] Deployment state documented — nothing deployed yet.
+- [x] Deployment state documented: Cloudflare version `9967978b-c943-47df-975b-980d5dae0a7f`, commit `0cf2365` on `origin/main`.
 - [ ] Mark the goal complete only after the real provider run, full revalidation, publication and production verification genuinely finish.
 
 ## Deliberate decisions, not pending work
@@ -270,3 +270,10 @@ Recorded so no future agent reopens them by accident.
   - That second failure then exposed a genuine product bug. `replacePhoto(null)` cleared React state but never cleared the file input's value, so removing a photo and choosing the same file again fired no change event and the UI did nothing at all. Fixed by clearing the input after each selection.
   - One stale assertion corrected: it expected 503 `analysis-not-configured`, which was only true before a secret existed. It now asserts that any analysis failure stays calm, returns a short JSON error code with no raw upstream detail, and sets no-store.
   - Result: 16 of 16 browser checks pass. `check:all` green across nine suites.
+- **2026-09-13 18:15 BST (Claude, published):** Committed `0cf2365`, pushed to `origin/main`, and deployed with `npm run publish:site`.
+  - Cloudflare version `9967978b-c943-47df-975b-980d5dae0a7f` on the custom domain. 21 assets uploaded, 62 unchanged. Bindings are the rate limiter and assets only.
+  - Production verified rather than assumed: `/`, `/meals`, `/log`, `/foods` and `/privacy` all 200; an unknown path still returns a real 404 rather than a soft one; `/meals` renders with the correct title.
+  - The served JavaScript contains no key material and no reference to `generativelanguage`, confirming the browser never calls the provider directly. Static CSP, `nosniff`, `DENY` and `no-referrer` headers are intact.
+  - API boundaries live: GET 405, unknown `/api/*` 404, header-less POST 403, cross-origin POST 403, `Cache-Control: no-store` present.
+  - End-to-end analysis confirmed in production through the Cloudflare encrypted secret, returning the correct structured result. The secret survived deployment.
+  - Remaining: judge decomposition and portion accuracy on real meal photographs. Everything else in the goal is complete.

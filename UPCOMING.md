@@ -12,7 +12,7 @@ disclaimer at the top of `COMPLETED.md` before touching the heatmap.
 
 | Agent  | Status                | Files claimed                | Updated    | Next action                       |
 | ------ | --------------------- | ---------------------------- | ---------- | --------------------------------- |
-| Claude | Meals/AI, blocked on key | `worker/`, `src/lib/mealAnalysis.ts`, `scripts/check-meals.mjs` | 2026-09-13 | user adds `.dev.vars`, then real Gemini run — see `MEALS_AI_GOAL_PROGRESS.md` |
+| Claude | Meals/AI published | none, all released | 2026-09-13 | judge accuracy on real meal photos — see `MEALS_AI_GOAL_PROGRESS.md` |
 | Codex  | free to pick up       | none held by Claude any more | 2026-09-07 | free to claim any file            |
 
 ## Heatmap task — all items complete
