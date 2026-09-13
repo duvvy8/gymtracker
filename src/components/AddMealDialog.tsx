@@ -485,6 +485,7 @@ export function AddMealDialog({
   const [scannerOpen, setScannerOpen] = useState(false);
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const controller = useRef<AbortController | null>(null);
+  const photoInput = useRef<HTMLInputElement | null>(null);
   const foods = useLiveQuery(() => searchFoods(term, 12), [term]);
   const totals = useMemo(
     () =>
@@ -833,12 +834,18 @@ export function AddMealDialog({
                     For clearer portions, photograph the whole plate from above in even light, with
                     sauces and drinks visible.
                   </p>
-                  <label htmlFor="meal-photo" className="mt-4 block text-sm font-medium">
-                    Add meal photo
-                  </label>
+                  {/*
+                    The real control is the button below. This input is only the
+                    file picker it delegates to, so it is taken out of the tab
+                    order rather than left as a clipped, unnamed stop for
+                    keyboard users.
+                  */}
                   <input
+                    ref={photoInput}
                     id="meal-photo"
-                    className="mt-2 block w-full text-sm"
+                    className="sr-only"
+                    tabIndex={-1}
+                    aria-hidden="true"
                     type="file"
                     accept="image/*"
                     onChange={(event) => {
@@ -850,6 +857,15 @@ export function AddMealDialog({
                       });
                     }}
                   />
+                  <Button
+                    className="mt-4"
+                    variant="primary"
+                    onClick={() => photoInput.current?.click()}
+                    disabled={busy}
+                  >
+                    <IconCamera />
+                    {photo ? 'Change meal photo' : 'Add meal photo'}
+                  </Button>
                   {photo ? (
                     <div className="mt-4 grid gap-3 sm:grid-cols-[10rem_1fr]">
                       <img
