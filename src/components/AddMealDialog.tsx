@@ -840,7 +840,7 @@ export function AddMealDialog({
                     id="meal-photo"
                     className="mt-2 block w-full text-sm"
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    accept="image/*"
                     onChange={(event) => {
                       // Clear the input afterwards so removing a photo and then
                       // picking the same file again still fires a change event.

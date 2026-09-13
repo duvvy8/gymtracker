@@ -1,13 +1,23 @@
-const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const MAX_SOURCE_BYTES = 12 * 1024 * 1024;
 const MAX_EDGE = 1600;
 
 export async function prepareMealImage(file: File): Promise<Blob> {
-  if (!ALLOWED_TYPES.has(file.type)) throw new Error('Choose a JPEG, PNG, WebP or GIF image.');
+  // Accept whatever the platform offers as an image rather than a fixed list:
+  // iPhones hand over HEIC from the camera roll and some Android pickers report
+  // no type at all, both of which a narrow list rejects outright. Decoding is
+  // the real gate, and the output is always JPEG, which is what the Worker
+  // accepts and re-validates by file signature.
+  if (file.type && !file.type.startsWith('image/')) throw new Error('Choose an image file.');
   if (file.size === 0) throw new Error('That image is empty.');
   if (file.size > MAX_SOURCE_BYTES) throw new Error('Choose an image smaller than 12 MB.');
 
-  const bitmap = await createImageBitmap(file);
+  let bitmap: ImageBitmap;
+  try {
+    // from-image honours EXIF rotation, so a phone photo is never analysed sideways.
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    throw new Error('That photo could not be read. Try another image.');
+  }
   try {
     const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
